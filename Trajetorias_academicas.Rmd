@@ -1,0 +1,1690 @@
+---
+title: "Trajetorias_academicas"
+author: "Nayara Melo"
+date: "`r Sys.Date()`"
+output: html_document
+---
+
+#####Packages
+```{r message=FALSE, warning=FALSE}
+library(tidyverse)
+library(readr)
+library(dplyr)
+library(ggplot2)
+library(Hmisc)
+library(psych)
+library(car)
+library(MASS)
+library(DescTools)
+library(QuantPsyc)
+library(GGally)
+library(RColorBrewer)
+```
+
+####Banco de Dados e Filtro de questões
+##### 2019
+Carregar o banco
+```{r message=FALSE, warning=FALSE}
+#carregar o banco
+Enade_2019 <- read.csv2("C:/Users/Nayara Melo/Dropbox/MESTRADO/Dados (Quantitativos)/Microdados/microdados_enade_2019.txt", stringsAsFactors = TRUE)
+nrow(Enade_2019) # = 433930
+Enade_2019 = Enade_2019 %>% dplyr::select(CO_CATEGAD, CO_IES, CO_GRUPO, CO_TURNO_GRADUACAO, CO_MODALIDADE, CO_MUNIC_CURSO, TP_SEXO, QE_I02, QE_I04, QE_I05, QE_I08, QE_I09, QE_I10, QE_I11, QE_I12, QE_I13, QE_I14, QE_I15, QE_I16, QE_I17, QE_I19, QE_I20, QE_I21, QE_I23, QE_I24, QE_I25, QE_I26)%>% filter(complete.cases(.))
+nrow(Enade_2019) # = 387392
+#Casos válidos 
+387392*100/433930
+```
+Filtros
+```{r}
+#filtro de banco
+Enade_2019<- Enade_2019 %>% mutate(
+  sexo = case_when(TP_SEXO %in% "M" ~ 0,
+                      TP_SEXO %in% "F" ~1),
+  turno = case_when(CO_TURNO_GRADUACAO %in% "1" ~ "Matutino",
+                       CO_TURNO_GRADUACAO %in% "2" ~ "Vespertino",
+                       CO_TURNO_GRADUACAO %in% "3" ~ "Integral",
+                       CO_TURNO_GRADUACAO %in% "4" ~ "Notuno"),
+  curso = case_when(CO_GRUPO %in% "5" ~ "Medicina Veterinaria", 
+                  CO_GRUPO %in% "6" ~ "Odontologia", 
+                  CO_GRUPO %in% "12" ~ "Medicina", 
+                  CO_GRUPO %in% "17" ~ "Agronomia", 
+                  CO_GRUPO %in% "19" ~ "Farmacia", 
+                  CO_GRUPO %in% "21" ~ "Arquitetura e Urbanismo",
+                  CO_GRUPO %in% "23" ~ "Enfermagem", 
+                  CO_GRUPO %in% "27" ~ "Fonoaudiologia",
+                  CO_GRUPO %in% "28" ~ "Nutricao",
+                  CO_GRUPO %in% "36" ~ "Fisioterapia", 
+                  CO_GRUPO %in% "51" ~ "Zootecnia", 
+                  CO_GRUPO %in% "55" ~ "Biomedicina", 
+                  CO_GRUPO %in% "69" ~ "Tecnologos",
+                  CO_GRUPO %in% "90" ~ "Tecnologos", 
+                  CO_GRUPO %in% "91" ~ "Tecnologos",
+                  CO_GRUPO %in% "92" ~ "Tecnologos",
+                  CO_GRUPO %in% "95" ~ "Tecnologos",
+                  CO_GRUPO %in% "3501" ~ "Ed. Fisica (Bach)",
+                  CO_GRUPO %in% "4003" ~ "Engenharias",
+                  CO_GRUPO %in% "5710" ~ "Engenharias",
+                  CO_GRUPO %in% "5806" ~ "Engenharias",
+                  CO_GRUPO %in% "5814" ~ "Engenharias",
+                  CO_GRUPO %in% "5902" ~ "Engenharias",
+                  CO_GRUPO %in% "6002" ~ "Engenharias",
+                  CO_GRUPO %in% "6008" ~ "Engenharias",
+                  CO_GRUPO %in% "6208" ~ "Engenharias",
+                  CO_GRUPO %in% "6307" ~ "Engenharias",
+                  CO_GRUPO %in% "6405" ~ "Engenharias",
+                  CO_GRUPO %in% "6410" ~ "Tecnologos"),
+  raca = case_when(QE_I02 %in% "A" ~ 0,
+                     QE_I02 %in% "B" ~ 1,
+                     QE_I02 %in% "C" ~ 1,
+                     QE_I02 %in% "D" ~ 1,
+                     QE_I02 %in% "E" ~ 1,
+                     QE_I02 %in% "F" ~ 1),
+  raca_cor = case_when(QE_I02 %in% "A" ~ "Branca",
+                     QE_I02 %in% "B" ~ "Preta",
+                     QE_I02 %in% "C" ~ "Amarela",
+                     QE_I02 %in% "D" ~ "Parda",
+                     QE_I02 %in% "E" ~ "Indigena",
+                     QE_I02 %in% "F" ~ "ND"),
+  esc_pai = case_when(QE_I04 %in% "E" ~ "Ensino Superior",
+                      QE_I04 %in% "F" ~ "Ensino Superior",
+                      QE_I04 %in% "D" ~ "Ensino Medio",
+                      QE_I04 %in% "B" ~ "Ensino Fundamental",
+                      QE_I04 %in% "C" ~ "Ensino Fundamental",
+                      QE_I04 %in% "A" ~ "Nenhuma"),
+  esc_mae = case_when(QE_I05 %in% "E" ~ "Ensino Superior",
+                      QE_I05 %in% "F" ~ "Ensino Superior",
+                      QE_I05 %in% "D" ~ "Ensino Medio",
+                      QE_I05 %in% "B" ~ "Ensino Fundamental",
+                      QE_I05 %in% "C" ~ "Ensino Fundamental",
+                      QE_I05 %in% "A" ~ "Nenhuma"),
+  renda = case_when(QE_I08 %in% "A" ~ "Ate 1,5 SM",
+                    QE_I08 %in% "B" ~ "De 1,5 a 3 SM",
+                    QE_I08 %in% "C" ~ "De 3 a 4,5 SM",
+                    QE_I08 %in% "D" ~ "De 4,5 a 6 SM",
+                    QE_I08 %in% "E" ~ "De 6 a 10 SM",
+                    QE_I08 %in% "F" ~ "De 10 a 30 SM", 
+                    QE_I08 %in% "G" ~ "Acima de 30 SM"),
+  renda_cod = case_when(QE_I08 %in% "A" ~ "Ate 3 SM",
+                    QE_I08 %in% "B" ~ "Ate 3 SM",
+                    QE_I08 %in% "C" ~ "De 3 a 4,5 SM",
+                    QE_I08 %in% "D" ~ "De 4,5 a 6 SM",
+                    QE_I08 %in% "E" ~ "De 6 a 10 SM",
+                    QE_I08 %in% "F" ~ "Acima de 10 SM", 
+                    QE_I08 %in% "G" ~ "Acima de 10 SM"),
+    auxilio = case_when(QE_I12 %in% "A" ~ 0, 
+                      QE_I12 %in% "B" ~ 1,
+                      QE_I12 %in% "C" ~ 1, 
+                      QE_I12 %in% "D" ~ 1, 
+                      QE_I12 %in% "E" ~ 1,
+                      QE_I12 %in% "F" ~ 1),
+  bolsa = case_when(QE_I13 %in% "A" ~ 0, 
+                      QE_I13 %in% "B" ~ 1,
+                      QE_I13 %in% "C" ~ 1, 
+                      QE_I13 %in% "D" ~ 1, 
+                      QE_I13 %in% "E" ~ 1,
+                      QE_I13 %in% "F" ~ 1),
+  pibic = case_when(QE_I13 %in% "B" ~ 1, 
+                      QE_I13 %in% "A" ~ 0,
+                      QE_I13 %in% "C" ~ 0, 
+                      QE_I13 %in% "D" ~ 0, 
+                      QE_I13 %in% "E" ~ 0,
+                      QE_I13 %in% "F" ~ 0),
+  extensao = case_when(QE_I13 %in% "C" ~ 1, 
+                      QE_I13 %in% "B" ~ 0,
+                      QE_I13 %in% "A" ~ 0, 
+                      QE_I13 %in% "D" ~ 0, 
+                      QE_I13 %in% "E" ~ 0,
+                      QE_I13 %in% "F" ~ 0),
+  monitoria = case_when(QE_I13 %in% "D" ~ 1, 
+                      QE_I13 %in% "B" ~ 0,
+                      QE_I13 %in% "C" ~ 0, 
+                      QE_I13 %in% "A" ~ 0, 
+                      QE_I13 %in% "E" ~ 0,
+                      QE_I13 %in% "F" ~ 0),
+  intercambio = case_when(QE_I14 %in% "A" ~ 0, 
+                      QE_I14 %in% "B" ~ 1,
+                      QE_I14 %in% "C" ~ 1, 
+                      QE_I14 %in% "D" ~ 1, 
+                      QE_I14 %in% "E" ~ 1,
+                      QE_I14 %in% "F" ~ 1),
+  cotas_dummy = case_when(QE_I15 %in% "A" ~ 0,
+                    QE_I15 %in% "B" ~ 1, 
+                    QE_I15 %in% "C" ~ 1, 
+                    QE_I15 %in% "D" ~ 1,
+                    QE_I15 %in% "E" ~ 1, 
+                    QE_I15 %in% "F" ~ 1),
+  cotas = case_when(QE_I15 %in% "A" ~ "Nao",
+                    QE_I15 %in% "B" ~ "Sim, etnico-racial", 
+                    QE_I15 %in% "C" ~ "Sim, renda", 
+                    QE_I15 %in% "D" ~ "Sim, escola publica",
+                    QE_I15 %in% "E" ~ "Sim, escola publica", 
+                    QE_I15 %in% "F" ~ "Sim, sistema diferente"), 
+  tipo_escola = case_when (QE_I17 %in% "A" ~ "Escola publica", 
+                           QE_I17 %in% "B" ~ "Escola privada",
+                           QE_I17 %in% "C" ~ "Exterior", 
+                           QE_I17 %in% "D" ~ "Escola publica", 
+                           QE_I17 %in% "E" ~ "Escola privada", 
+                           QE_I17 %in% "F" ~ "Exterior"),
+  escola_privada = case_when (QE_I17 %in% "B" ~ 1, 
+                           QE_I17 %in% "A" ~ 0,
+                           QE_I17 %in% "C" ~ 0, 
+                           QE_I17 %in% "D" ~ 0, 
+                           QE_I17 %in% "E" ~ 1, 
+                           QE_I17 %in% "F" ~ 0), 
+  escola_publica = case_when (QE_I17 %in% "A" ~ 1, 
+                           QE_I17 %in% "B" ~ 0, 
+                           QE_I17 %in% "D" ~ 1, 
+                           QE_I17 %in% "E" ~ 0, 
+                           QE_I17 %in% "C" ~ 0, 
+                           QE_I17 %in% "F" ~ 0), 
+  incentivo = case_when(QE_I19 %in% "A" ~ "Ninguem", 
+                        QE_I19 %in% "B" ~ "Pais", 
+                        QE_I19 %in% "C" ~ "Outros familiares", 
+                        QE_I19 %in% "D" ~ "Professores", 
+                        QE_I19 %in% "E" ~ "Líder religioso", 
+                        QE_I19 %in% "F" ~ "Colegas/Amigos",
+                        QE_I19 %in% "G" ~ "Outras pessoas"),
+  background = case_when(QE_I21 %in% "A" ~ "Sim",
+                         QE_I21 %in% "B" ~ "Nao"),
+  idioma = case_when(QE_I24 %in% "A" ~ 1,
+                     QE_I24 %in% "B" ~ 1,
+                      QE_I24 %in% "C" ~ 1, 
+                      QE_I24 %in% "D" ~ 1,
+                      QE_I24 %in% "E" ~ 0),
+  escolha_inst = case_when(QE_I26 %in% "A" ~ 1, 
+                           TRUE ~ 0))
+
+Enade_2019 = Enade_2019 %>% dplyr::select(CO_IES, CO_MODALIDADE, sexo, turno, curso, raca, raca_cor, esc_pai, esc_mae, renda, renda_cod, auxilio, bolsa, pibic, extensao, monitoria,intercambio, cotas,cotas_dummy, tipo_escola, escola_privada, escola_publica, incentivo, background,idioma, escolha_inst)
+
+UFPE_2019 <- Enade_2019 %>% filter(CO_IES == 580, CO_MODALIDADE == 1)
+UPE_2019 <- Enade_2019 %>% filter(CO_IES == 409, CO_MODALIDADE == 1)
+```
+#####2018
+Carregar o banco
+```{r}
+#Carregar o Banco
+Enade_2018 <- read.csv2("C:/Users/Nayara Melo/Dropbox/MESTRADO/Dados (Quantitativos)/Microdados/microdados_enade_2018.txt", stringsAsFactors = TRUE)
+nrow(Enade_2018) # =548127
+Enade_2018 = Enade_2018 %>% dplyr::select(CO_CATEGAD, CO_IES, CO_GRUPO,CO_TURNO_GRADUACAO, CO_MODALIDADE, CO_MUNIC_CURSO, TP_SEXO, QE_I02, QE_I04, QE_I05, QE_I08, QE_I09, QE_I10, QE_I11, QE_I12, QE_I13, QE_I14, QE_I15, QE_I16, QE_I17, QE_I19, QE_I20, QE_I21, QE_I23, QE_I24, QE_I25, QE_I26)%>% filter(complete.cases(.))
+nrow(Enade_2018) # = 485508
+#casos validos 
+485508*100/548127
+```
+Filtros
+```{r}
+Enade_2018<- Enade_2018%>% mutate(
+  sexo = case_when(TP_SEXO %in% "M" ~ 0,
+                      TP_SEXO %in% "F" ~1),
+  turno = case_when(CO_TURNO_GRADUACAO %in% "1" ~ "Matutino",
+                    CO_TURNO_GRADUACAO %in% "2" ~ "Vespertino",
+                    CO_TURNO_GRADUACAO %in% "3" ~ "Integral",
+                    CO_TURNO_GRADUACAO %in% "4" ~ "Notuno"),
+     curso = case_when(CO_GRUPO %in% "1" ~ "Administracao", 
+                  CO_GRUPO %in% "2" ~ "Direito", 
+                  CO_GRUPO %in% "13" ~ "Ciencias Economicas", 
+                  CO_GRUPO %in% "18" ~ "Psicologia", 
+                  CO_GRUPO %in% "22" ~ "Ciencias Contabeis", 
+                  CO_GRUPO %in% "26" ~ "Design",
+                  CO_GRUPO %in% "29" ~ "Turismo", 
+                  CO_GRUPO %in% "38" ~ "Servico Social",
+                  CO_GRUPO %in% "67" ~ "Secretariado Executivo",
+                  CO_GRUPO %in% "81" ~ "Relacoes Internacionais", 
+                  CO_GRUPO %in% "83" ~ "Tecnologos", 
+                  CO_GRUPO %in% "84" ~ "Tecnologos", 
+                  CO_GRUPO %in% "85" ~ "Tecnologos",
+                  CO_GRUPO %in% "86" ~ "Tecnologos", 
+                  CO_GRUPO %in% "87" ~ "Tecnologos",
+                  CO_GRUPO %in% "88" ~ "Tecnologos",
+                  CO_GRUPO %in% "93" ~ "Tecnologos",
+                  CO_GRUPO %in% "94" ~ "Tecnologos",
+                  CO_GRUPO %in% "100" ~ "Adm Publica",
+                  CO_GRUPO %in% "101" ~ "Teologia",
+                  CO_GRUPO %in% "102" ~ "Tecnologos",
+                  CO_GRUPO %in% "103" ~ "Tecnologos",
+                  CO_GRUPO %in% "104" ~ "Tecnologos",
+                  CO_GRUPO %in% "105" ~ "Tecnologos",
+                  CO_GRUPO %in% "106" ~ "Tecnologos",
+                  CO_GRUPO %in% "803" ~ "Jornalismo",
+                  CO_GRUPO %in% "804" ~ "Publicidade"),
+  raca = case_when(QE_I02 %in% "A" ~ 0,
+                     QE_I02 %in% "B" ~ 1,
+                     QE_I02 %in% "C" ~ 1,
+                     QE_I02 %in% "D" ~ 1,
+                     QE_I02 %in% "E" ~ 1,
+                     QE_I02 %in% "F" ~ 1),
+  raca_cor = case_when(QE_I02 %in% "A" ~ "Branca",
+                     QE_I02 %in% "B" ~ "Preta",
+                     QE_I02 %in% "C" ~ "Amarela",
+                     QE_I02 %in% "D" ~ "Parda",
+                     QE_I02 %in% "E" ~ "Indigena",
+                     QE_I02 %in% "F" ~ "ND"),
+  esc_pai = case_when(QE_I04 %in% "E" ~ "Ensino Superior",
+                      QE_I04 %in% "F" ~ "Ensino Superior",
+                      QE_I04 %in% "D" ~ "Ensino Medio",
+                      QE_I04 %in% "B" ~ "Ensino Fundamental",
+                      QE_I04 %in% "C" ~ "Ensino Fundamental",
+                      QE_I04 %in% "A" ~ "Nenhuma"),
+  esc_mae = case_when(QE_I05 %in% "E" ~ "Ensino Superior",
+                      QE_I05 %in% "F" ~ "Ensino Superior",
+                      QE_I05 %in% "D" ~ "Ensino Medio",
+                      QE_I05 %in% "B" ~ "Ensino Fundamental",
+                      QE_I05 %in% "C" ~ "Ensino Fundamental",
+                      QE_I05 %in% "A" ~ "Nenhuma"),
+  renda = case_when(QE_I08 %in% "A" ~ "Ate 1,5 SM",
+                    QE_I08 %in% "B" ~ "De 1,5 a 3 SM",
+                    QE_I08 %in% "C" ~ "De 3 a 4,5 SM",
+                    QE_I08 %in% "D" ~ "De 4,5 a 6 SM",
+                    QE_I08 %in% "E" ~ "De 6 a 10 SM",
+                    QE_I08 %in% "F" ~ "De 10 a 30 SM", 
+                    QE_I08 %in% "G" ~ "Acima de 30 SM"),
+  renda_cod = case_when(QE_I08 %in% "A" ~ "Ate 3 SM",
+                    QE_I08 %in% "B" ~ "Ate 3 SM",
+                    QE_I08 %in% "C" ~ "De 3 a 4,5 SM",
+                    QE_I08 %in% "D" ~ "De 4,5 a 6 SM",
+                    QE_I08 %in% "E" ~ "De 6 a 10 SM",
+                    QE_I08 %in% "F" ~ "Acima de 10 SM", 
+                    QE_I08 %in% "G" ~ "Acima de 10 SM"),
+    auxilio = case_when(QE_I12 %in% "A" ~ 0, 
+                      QE_I12 %in% "B" ~ 1,
+                      QE_I12 %in% "C" ~ 1, 
+                      QE_I12 %in% "D" ~ 1, 
+                      QE_I12 %in% "E" ~ 1,
+                      QE_I12 %in% "F" ~ 1),
+  bolsa = case_when(QE_I13 %in% "A" ~ 0, 
+                      QE_I13 %in% "B" ~ 1,
+                      QE_I13 %in% "C" ~ 1, 
+                      QE_I13 %in% "D" ~ 1, 
+                      QE_I13 %in% "E" ~ 1,
+                      QE_I13 %in% "F" ~ 1),
+  pibic = case_when(QE_I13 %in% "B" ~ 1, 
+                      QE_I13 %in% "A" ~ 0,
+                      QE_I13 %in% "C" ~ 0, 
+                      QE_I13 %in% "D" ~ 0, 
+                      QE_I13 %in% "E" ~ 0,
+                      QE_I13 %in% "F" ~ 0),
+  extensao = case_when(QE_I13 %in% "C" ~ 1, 
+                      QE_I13 %in% "B" ~ 0,
+                      QE_I13 %in% "A" ~ 0, 
+                      QE_I13 %in% "D" ~ 0, 
+                      QE_I13 %in% "E" ~ 0,
+                      QE_I13 %in% "F" ~ 0),
+  monitoria = case_when(QE_I13 %in% "D" ~ 1, 
+                      QE_I13 %in% "B" ~ 0,
+                      QE_I13 %in% "C" ~ 0, 
+                      QE_I13 %in% "A" ~ 0, 
+                      QE_I13 %in% "E" ~ 0,
+                      QE_I13 %in% "F" ~ 0),
+  intercambio = case_when(QE_I14 %in% "A" ~ 0, 
+                      QE_I14 %in% "B" ~ 1,
+                      QE_I14 %in% "C" ~ 1, 
+                      QE_I14 %in% "D" ~ 1, 
+                      QE_I14 %in% "E" ~ 1,
+                      QE_I14 %in% "F" ~ 1),
+  cotas_dummy = case_when(QE_I15 %in% "A" ~ 0,
+                    QE_I15 %in% "B" ~ 1, 
+                    QE_I15 %in% "C" ~ 1, 
+                    QE_I15 %in% "D" ~ 1,
+                    QE_I15 %in% "E" ~ 1, 
+                    QE_I15 %in% "F" ~ 1),
+  cotas = case_when(QE_I15 %in% "A" ~ "Nao",
+                    QE_I15 %in% "B" ~ "Sim, etnico-racial", 
+                    QE_I15 %in% "C" ~ "Sim, renda", 
+                    QE_I15 %in% "D" ~ "Sim, escola publica",
+                    QE_I15 %in% "E" ~ "Sim, escola publica", 
+                    QE_I15 %in% "F" ~ "Sim, sistema diferente"), 
+  tipo_escola = case_when (QE_I17 %in% "A" ~ "Escola publica", 
+                           QE_I17 %in% "B" ~ "Escola privada",
+                           QE_I17 %in% "C" ~ "Exterior", 
+                           QE_I17 %in% "D" ~ "Escola publica", 
+                           QE_I17 %in% "E" ~ "Escola privada", 
+                           QE_I17 %in% "F" ~ "Exterior"),
+  escola_privada = case_when (QE_I17 %in% "B" ~ 1, 
+                           QE_I17 %in% "A" ~ 0,
+                           QE_I17 %in% "C" ~ 0, 
+                           QE_I17 %in% "D" ~ 0, 
+                           QE_I17 %in% "E" ~ 1, 
+                           QE_I17 %in% "F" ~ 0), 
+  escola_publica = case_when (QE_I17 %in% "A" ~ 1, 
+                           QE_I17 %in% "B" ~ 0, 
+                           QE_I17 %in% "D" ~ 1, 
+                           QE_I17 %in% "E" ~ 0, 
+                           QE_I17 %in% "C" ~ 0, 
+                           QE_I17 %in% "F" ~ 0), 
+  incentivo = case_when(QE_I19 %in% "A" ~ "Ninguem", 
+                        QE_I19 %in% "B" ~ "Pais", 
+                        QE_I19 %in% "C" ~ "Outros familiares", 
+                        QE_I19 %in% "D" ~ "Professores", 
+                        QE_I19 %in% "E" ~ "Líder religioso", 
+                        QE_I19 %in% "F" ~ "Colegas/Amigos",
+                        QE_I19 %in% "G" ~ "Outras pessoas"),
+  background = case_when(QE_I21 %in% "A" ~ "Sim",
+                         QE_I21 %in% "B" ~ "Nao"),
+  idioma = case_when(QE_I24 %in% "A" ~ 1,
+                     QE_I24 %in% "B" ~ 1,
+                      QE_I24 %in% "C" ~ 1, 
+                      QE_I24 %in% "D" ~ 1,
+                      QE_I24 %in% "E" ~ 0),
+  escolha_inst = case_when(QE_I26 %in% "A" ~ 1, 
+                           TRUE ~ 0))
+Enade_2018 = Enade_2018 %>% dplyr::select(CO_IES, CO_MODALIDADE, sexo, turno, curso, raca, raca_cor, esc_pai, esc_mae, renda, renda_cod, auxilio, bolsa, pibic, extensao, monitoria, intercambio, cotas,cotas_dummy, tipo_escola, escola_privada, escola_publica, incentivo, background,idioma, escolha_inst)
+
+UFPE_2018 <- Enade_2018 %>% filter(CO_IES == 580, CO_MODALIDADE == 1)
+UPE_2018 <- Enade_2018 %>% filter(CO_IES == 409, CO_MODALIDADE == 1)
+```
+##### 2017
+Carregar o banco
+```{r}
+Enade_2017 <- read.csv2("C:/Users/Nayara Melo/Dropbox/MESTRADO/Dados (Quantitativos)/Microdados/microdados_enade_2017.txt", stringsAsFactors = TRUE)
+nrow(Enade_2017) # = 537436
+Enade_2017 = Enade_2017 %>% dplyr::select(CO_CATEGAD, CO_IES, CO_GRUPO,CO_TURNO_GRADUACAO, CO_MODALIDADE, CO_MUNIC_CURSO, TP_SEXO, QE_I02, QE_I04, QE_I05, QE_I08, QE_I09, QE_I10, QE_I11, QE_I12, QE_I13, QE_I14, QE_I15, QE_I16, QE_I17, QE_I19, QE_I20, QE_I21, QE_I23, QE_I24, QE_I25, QE_I26)%>% filter(complete.cases(.))
+nrow(Enade_2017)# = 467275
+#casos validos
+467275*100/537436
+```
+Filtros
+```{r}
+Enade_2017<- Enade_2017%>% mutate(
+  sexo = case_when(TP_SEXO %in% "M" ~ 0,
+                      TP_SEXO %in% "F" ~1),
+  turno = case_when(CO_TURNO_GRADUACAO %in% "1" ~ "Matutino",
+                       CO_TURNO_GRADUACAO %in% "2" ~ "Vespertino",
+                       CO_TURNO_GRADUACAO %in% "3" ~ "Integral",
+                       CO_TURNO_GRADUACAO %in% "4" ~ "Notuno"),
+    curso = case_when(CO_GRUPO %in% "4003" ~ "Engenharias",
+                  CO_GRUPO %in% "21" ~ "Arquitetura e Urbanismo", 
+                  CO_GRUPO %in% "72" ~ "Tecnologos", 
+                  CO_GRUPO %in% "76" ~ "Tecnologos", 
+                  CO_GRUPO %in% "79" ~ "Tecnologos", 
+                  CO_GRUPO %in% "701" ~ "Bacharelados",
+                  CO_GRUPO %in% "702" ~ "Licenciaturas",
+                  CO_GRUPO %in% "903" ~ "Bacharelados",
+                  CO_GRUPO %in% "904" ~ "Licenciaturas",
+                  CO_GRUPO %in% "905" ~ "Bacharelados",
+                  CO_GRUPO %in% "906" ~ "Licenciaturas",
+                  CO_GRUPO %in% "1401" ~ "Bacharelados",
+                  CO_GRUPO %in% "1402" ~ "Licenciaturas",
+                  CO_GRUPO %in% "1501" ~ "Bacharelados",
+                  CO_GRUPO %in% "1502" ~ "Licenciaturas",
+                  CO_GRUPO %in% "1601" ~ "Bacharelados",
+                  CO_GRUPO %in% "1602" ~ "Licenciaturas",
+                  CO_GRUPO %in% "2001" ~ "Bacharelados",
+                  CO_GRUPO %in% "2402" ~ "Licenciaturas",
+                  CO_GRUPO %in% "2401" ~ "Bacharelados",
+                  CO_GRUPO %in% "2501" ~ "Licenciaturas",
+                  CO_GRUPO %in% "3001" ~ "Bacharelados",
+                  CO_GRUPO %in% "3002" ~ "Licenciaturas",
+                  CO_GRUPO %in% "3201" ~ "Bacharelados",
+                  CO_GRUPO %in% "3202" ~ "Licenciaturas",
+                  CO_GRUPO %in% "3502" ~ "Licenciaturas",
+                  CO_GRUPO %in% "4004" ~ "Bacharelados", 
+                  CO_GRUPO %in% "4005" ~ "Licenciaturas", 
+                  CO_GRUPO %in% "4006" ~ "S. de Informacao", 
+                  CO_GRUPO %in% "4301" ~ "Licenciaturas", 
+                  CO_GRUPO %in% "5401" ~ "Bacharelados",
+                  CO_GRUPO %in% "5402" ~ "Licenciaturas", 
+                  CO_GRUPO %in% "5710" ~ "Servico Social",
+                  CO_GRUPO %in% "5806" ~ "Secretariado Executivo",
+                  CO_GRUPO %in% "5814" ~ "Relacoes Internacionais", 
+                  CO_GRUPO %in% "5902" ~ "Engenharias", 
+                  CO_GRUPO %in% "6002" ~ "Engenharias", 
+                  CO_GRUPO %in% "6008" ~ "Engenharias",
+                  CO_GRUPO %in% "6208" ~ "Engenharias", 
+                  CO_GRUPO %in% "6306" ~ "Engenharias",
+                  CO_GRUPO %in% "6307" ~ "Engenharias",
+                  CO_GRUPO %in% "6405" ~ "Engenharias",
+                  CO_GRUPO %in% "6407" ~ "Licenciaturas",
+                  CO_GRUPO %in% "6409" ~ "Tecnologos"),
+  raca = case_when(QE_I02 %in% "A" ~ 0,
+                     QE_I02 %in% "B" ~ 1,
+                     QE_I02 %in% "C" ~ 1,
+                     QE_I02 %in% "D" ~ 1,
+                     QE_I02 %in% "E" ~ 1,
+                     QE_I02 %in% "F" ~ 1),
+  raca_cor = case_when(QE_I02 %in% "A" ~ "Branca",
+                     QE_I02 %in% "B" ~ "Preta",
+                     QE_I02 %in% "C" ~ "Amarela",
+                     QE_I02 %in% "D" ~ "Parda",
+                     QE_I02 %in% "E" ~ "Indigena",
+                     QE_I02 %in% "F" ~ "ND"),
+  esc_pai = case_when(QE_I04 %in% "E" ~ "Ensino Superior",
+                      QE_I04 %in% "F" ~ "Ensino Superior",
+                      QE_I04 %in% "D" ~ "Ensino Medio",
+                      QE_I04 %in% "B" ~ "Ensino Fundamental",
+                      QE_I04 %in% "C" ~ "Ensino Fundamental",
+                      QE_I04 %in% "A" ~ "Nenhuma"),
+  esc_mae = case_when(QE_I05 %in% "E" ~ "Ensino Superior",
+                      QE_I05 %in% "F" ~ "Ensino Superior",
+                      QE_I05 %in% "D" ~ "Ensino Medio",
+                      QE_I05 %in% "B" ~ "Ensino Fundamental",
+                      QE_I05 %in% "C" ~ "Ensino Fundamental",
+                      QE_I05 %in% "A" ~ "Nenhuma"),
+  renda = case_when(QE_I08 %in% "A" ~ "Ate 1,5 SM",
+                    QE_I08 %in% "B" ~ "De 1,5 a 3 SM",
+                    QE_I08 %in% "C" ~ "De 3 a 4,5 SM",
+                    QE_I08 %in% "D" ~ "De 4,5 a 6 SM",
+                    QE_I08 %in% "E" ~ "De 6 a 10 SM",
+                    QE_I08 %in% "F" ~ "De 10 a 30 SM", 
+                    QE_I08 %in% "G" ~ "Acima de 30 SM"),
+  renda_cod = case_when(QE_I08 %in% "A" ~ "Ate 3 SM",
+                    QE_I08 %in% "B" ~ "Ate 3 SM",
+                    QE_I08 %in% "C" ~ "De 3 a 4,5 SM",
+                    QE_I08 %in% "D" ~ "De 4,5 a 6 SM",
+                    QE_I08 %in% "E" ~ "De 6 a 10 SM",
+                    QE_I08 %in% "F" ~ "Acima de 10 SM", 
+                    QE_I08 %in% "G" ~ "Acima de 10 SM"),
+    auxilio = case_when(QE_I12 %in% "A" ~ 0, 
+                      QE_I12 %in% "B" ~ 1,
+                      QE_I12 %in% "C" ~ 1, 
+                      QE_I12 %in% "D" ~ 1, 
+                      QE_I12 %in% "E" ~ 1,
+                      QE_I12 %in% "F" ~ 1),
+  bolsa = case_when(QE_I13 %in% "A" ~ 0, 
+                      QE_I13 %in% "B" ~ 1,
+                      QE_I13 %in% "C" ~ 1, 
+                      QE_I13 %in% "D" ~ 1, 
+                      QE_I13 %in% "E" ~ 1,
+                      QE_I13 %in% "F" ~ 1),
+  pibic = case_when(QE_I13 %in% "B" ~ 1, 
+                      QE_I13 %in% "A" ~ 0,
+                      QE_I13 %in% "C" ~ 0, 
+                      QE_I13 %in% "D" ~ 0, 
+                      QE_I13 %in% "E" ~ 0,
+                      QE_I13 %in% "F" ~ 0),
+  extensao = case_when(QE_I13 %in% "C" ~ 1, 
+                      QE_I13 %in% "B" ~ 0,
+                      QE_I13 %in% "A" ~ 0, 
+                      QE_I13 %in% "D" ~ 0, 
+                      QE_I13 %in% "E" ~ 0,
+                      QE_I13 %in% "F" ~ 0),
+  monitoria = case_when(QE_I13 %in% "D" ~ 1, 
+                      QE_I13 %in% "B" ~ 0,
+                      QE_I13 %in% "C" ~ 0, 
+                      QE_I13 %in% "A" ~ 0, 
+                      QE_I13 %in% "E" ~ 0,
+                      QE_I13 %in% "F" ~ 0),
+  intercambio = case_when(QE_I14 %in% "A" ~ 0, 
+                      QE_I14 %in% "B" ~ 1,
+                      QE_I14 %in% "C" ~ 1, 
+                      QE_I14 %in% "D" ~ 1, 
+                      QE_I14 %in% "E" ~ 1,
+                      QE_I14 %in% "F" ~ 1),
+  cotas_dummy = case_when(QE_I15 %in% "A" ~ 0,
+                    QE_I15 %in% "B" ~ 1, 
+                    QE_I15 %in% "C" ~ 1, 
+                    QE_I15 %in% "D" ~ 1,
+                    QE_I15 %in% "E" ~ 1, 
+                    QE_I15 %in% "F" ~ 1),
+  cotas = case_when(QE_I15 %in% "A" ~ "Nao",
+                    QE_I15 %in% "B" ~ "Sim, etnico-racial", 
+                    QE_I15 %in% "C" ~ "Sim, renda", 
+                    QE_I15 %in% "D" ~ "Sim, escola publica",
+                    QE_I15 %in% "E" ~ "Sim, escola publica", 
+                    QE_I15 %in% "F" ~ "Sim, sistema diferente"), 
+  tipo_escola = case_when (QE_I17 %in% "A" ~ "Escola publica", 
+                           QE_I17 %in% "B" ~ "Escola privada",
+                           QE_I17 %in% "C" ~ "Exterior", 
+                           QE_I17 %in% "D" ~ "Escola publica", 
+                           QE_I17 %in% "E" ~ "Escola privada", 
+                           QE_I17 %in% "F" ~ "Exterior"),
+  escola_privada = case_when (QE_I17 %in% "B" ~ 1, 
+                           QE_I17 %in% "A" ~ 0,
+                           QE_I17 %in% "C" ~ 0, 
+                           QE_I17 %in% "D" ~ 0, 
+                           QE_I17 %in% "E" ~ 1, 
+                           QE_I17 %in% "F" ~ 0), 
+  escola_publica = case_when (QE_I17 %in% "A" ~ 1, 
+                           QE_I17 %in% "B" ~ 0, 
+                           QE_I17 %in% "D" ~ 1, 
+                           QE_I17 %in% "E" ~ 0, 
+                           QE_I17 %in% "C" ~ 0, 
+                           QE_I17 %in% "F" ~ 0), 
+  incentivo = case_when(QE_I19 %in% "A" ~ "Ninguem", 
+                        QE_I19 %in% "B" ~ "Pais", 
+                        QE_I19 %in% "C" ~ "Outros familiares", 
+                        QE_I19 %in% "D" ~ "Professores", 
+                        QE_I19 %in% "E" ~ "Líder religioso", 
+                        QE_I19 %in% "F" ~ "Colegas/Amigos",
+                        QE_I19 %in% "G" ~ "Outras pessoas"),
+  background = case_when(QE_I21 %in% "A" ~ "Sim",
+                         QE_I21 %in% "B" ~ "Nao"),
+  idioma = case_when(QE_I24 %in% "A" ~ 1,
+                     QE_I24 %in% "B" ~ 1,
+                      QE_I24 %in% "C" ~ 1, 
+                      QE_I24 %in% "D" ~ 1,
+                      QE_I24 %in% "E" ~ 0),
+  escolha_inst = case_when(QE_I26 %in% "A" ~ 1, 
+                           TRUE ~ 0))
+Enade_2017 = Enade_2017 %>% dplyr::select(CO_IES, CO_MODALIDADE, sexo, turno, curso, raca, raca_cor, esc_pai, esc_mae, renda, renda_cod, auxilio, bolsa, pibic, extensao, monitoria, intercambio, cotas,cotas_dummy, tipo_escola, escola_privada, escola_publica, incentivo, background,idioma, escolha_inst)
+
+UFPE_2017 <- Enade_2017 %>% filter(CO_IES == 580, CO_MODALIDADE == 1)
+UPE_2017 <- Enade_2017 %>% filter(CO_IES == 409, CO_MODALIDADE == 1)
+```
+#####2016
+Carregar o banco
+```{r}
+Enade_2016 <- read.csv2("C:/Users/Nayara Melo/Dropbox/MESTRADO/Dados (Quantitativos)/Microdados/microdados_enade_2016.txt", stringsAsFactors = TRUE)
+nrow(Enade_2016) # = 216044
+Enade_2016 = Enade_2016 %>% dplyr::select(CO_CATEGAD, CO_IES, CO_GRUPO, IN_MATUT, IN_VESPER, IN_NOTURNO, CO_MODALIDADE, CO_MUNIC_CURSO, TP_SEXO, QE_I02, QE_I04, QE_I05, QE_I08, QE_I09, QE_I10, QE_I11, QE_I12, QE_I13, QE_I14, QE_I15, QE_I16, QE_I17, QE_I19, QE_I20, QE_I21, QE_I23, QE_I24, QE_I25, QE_I26)%>% filter(complete.cases(.))
+nrow(Enade_2016) # = 202596
+#casos validos
+202596*100/216044
+```
+Filtros
+```{r}
+Enade_2016 <- Enade_2016%>% mutate(
+  sexo = case_when(TP_SEXO %in% "M" ~ 0,
+                      TP_SEXO %in% "F" ~1),
+  matutino = case_when(IN_MATUT %in% "1" ~ 1,
+                       TRUE ~ 0),
+  vespertino = case_when(IN_VESPER %in% "1" ~ 1,
+                       TRUE ~ 0), 
+   noturno = case_when(IN_NOTURNO %in% "1" ~ 1,
+                       TRUE ~ 0),
+  curso = case_when(CO_GRUPO %in% "5" ~ "Medicina Veterinaria", 
+                  CO_GRUPO %in% "6" ~ "Odontologia", 
+                  CO_GRUPO %in% "12" ~ "Medicina", 
+                  CO_GRUPO %in% "17" ~ "Agronomia", 
+                  CO_GRUPO %in% "19" ~ "Farmacia", 
+                  CO_GRUPO %in% "23" ~ "Enfermagem", 
+                  CO_GRUPO %in% "27" ~ "Fonoaudiologia",
+                  CO_GRUPO %in% "28" ~ "Nutricao",
+                  CO_GRUPO %in% "36" ~ "Fisioterapia", 
+                  CO_GRUPO %in% "51" ~ "Zootecnia", 
+                  CO_GRUPO %in% "38" ~ "Servico Social", 
+                  CO_GRUPO %in% "69" ~ "Tecnologos",
+                  CO_GRUPO %in% "90" ~ "Tecnologos", 
+                  CO_GRUPO %in% "91" ~ "Tecnologos",
+                  CO_GRUPO %in% "92" ~ "Tecnologos",
+                  CO_GRUPO %in% "95" ~ "Tecnologos",
+                  CO_GRUPO %in% "3501" ~ "Ed. Fisica (Bach)",
+                  CO_GRUPO %in% "55" ~ "Biomedicina"),
+  raca = case_when(QE_I02 %in% "A" ~ 0,
+                     QE_I02 %in% "B" ~ 1,
+                     QE_I02 %in% "C" ~ 1,
+                     QE_I02 %in% "D" ~ 1,
+                     QE_I02 %in% "E" ~ 1,
+                     QE_I02 %in% "F" ~ 1),
+  raca_cor = case_when(QE_I02 %in% "A" ~ "Branca",
+                     QE_I02 %in% "B" ~ "Preta",
+                     QE_I02 %in% "C" ~ "Amarela",
+                     QE_I02 %in% "D" ~ "Parda",
+                     QE_I02 %in% "E" ~ "Indigena",
+                     QE_I02 %in% "F" ~ "ND"),
+  esc_pai = case_when(QE_I04 %in% "E" ~ "Ensino Superior",
+                      QE_I04 %in% "F" ~ "Ensino Superior",
+                      QE_I04 %in% "D" ~ "Ensino Medio",
+                      QE_I04 %in% "B" ~ "Ensino Fundamental",
+                      QE_I04 %in% "C" ~ "Ensino Fundamental",
+                      QE_I04 %in% "A" ~ "Nenhuma"),
+  esc_mae = case_when(QE_I05 %in% "E" ~ "Ensino Superior",
+                      QE_I05 %in% "F" ~ "Ensino Superior",
+                      QE_I05 %in% "D" ~ "Ensino Medio",
+                      QE_I05 %in% "B" ~ "Ensino Fundamental",
+                      QE_I05 %in% "C" ~ "Ensino Fundamental",
+                      QE_I05 %in% "A" ~ "Nenhuma"),
+  renda = case_when(QE_I08 %in% "A" ~ "Ate 1,5 SM",
+                    QE_I08 %in% "B" ~ "De 1,5 a 3 SM",
+                    QE_I08 %in% "C" ~ "De 3 a 4,5 SM",
+                    QE_I08 %in% "D" ~ "De 4,5 a 6 SM",
+                    QE_I08 %in% "E" ~ "De 6 a 10 SM",
+                    QE_I08 %in% "F" ~ "De 10 a 30 SM", 
+                    QE_I08 %in% "G" ~ "Acima de 30 SM"),
+  renda_cod = case_when(QE_I08 %in% "A" ~ "Ate 3 SM",
+                    QE_I08 %in% "B" ~ "Ate 3 SM",
+                    QE_I08 %in% "C" ~ "De 3 a 4,5 SM",
+                    QE_I08 %in% "D" ~ "De 4,5 a 6 SM",
+                    QE_I08 %in% "E" ~ "De 6 a 10 SM",
+                    QE_I08 %in% "F" ~ "Acima de 10 SM", 
+                    QE_I08 %in% "G" ~ "Acima de 10 SM"),
+    auxilio = case_when(QE_I12 %in% "A" ~ 0, 
+                      QE_I12 %in% "B" ~ 1,
+                      QE_I12 %in% "C" ~ 1, 
+                      QE_I12 %in% "D" ~ 1, 
+                      QE_I12 %in% "E" ~ 1,
+                      QE_I12 %in% "F" ~ 1),
+  bolsa = case_when(QE_I13 %in% "A" ~ 0, 
+                      QE_I13 %in% "B" ~ 1,
+                      QE_I13 %in% "C" ~ 1, 
+                      QE_I13 %in% "D" ~ 1, 
+                      QE_I13 %in% "E" ~ 1,
+                      QE_I13 %in% "F" ~ 1),
+  pibic = case_when(QE_I13 %in% "B" ~ 1, 
+                      QE_I13 %in% "A" ~ 0,
+                      QE_I13 %in% "C" ~ 0, 
+                      QE_I13 %in% "D" ~ 0, 
+                      QE_I13 %in% "E" ~ 0,
+                      QE_I13 %in% "F" ~ 0),
+  extensao = case_when(QE_I13 %in% "C" ~ 1, 
+                      QE_I13 %in% "B" ~ 0,
+                      QE_I13 %in% "A" ~ 0, 
+                      QE_I13 %in% "D" ~ 0, 
+                      QE_I13 %in% "E" ~ 0,
+                      QE_I13 %in% "F" ~ 0),
+  monitoria = case_when(QE_I13 %in% "D" ~ 1, 
+                      QE_I13 %in% "B" ~ 0,
+                      QE_I13 %in% "C" ~ 0, 
+                      QE_I13 %in% "A" ~ 0, 
+                      QE_I13 %in% "E" ~ 0,
+                      QE_I13 %in% "F" ~ 0),
+  intercambio = case_when(QE_I14 %in% "A" ~ 0, 
+                      QE_I14 %in% "B" ~ 1,
+                      QE_I14 %in% "C" ~ 1, 
+                      QE_I14 %in% "D" ~ 1, 
+                      QE_I14 %in% "E" ~ 1,
+                      QE_I14 %in% "F" ~ 1),
+  cotas_dummy = case_when(QE_I15 %in% "A" ~ 0,
+                    QE_I15 %in% "B" ~ 1, 
+                    QE_I15 %in% "C" ~ 1, 
+                    QE_I15 %in% "D" ~ 1,
+                    QE_I15 %in% "E" ~ 1, 
+                    QE_I15 %in% "F" ~ 1),
+  cotas = case_when(QE_I15 %in% "A" ~ "Nao",
+                    QE_I15 %in% "B" ~ "Sim, etnico-racial", 
+                    QE_I15 %in% "C" ~ "Sim, renda", 
+                    QE_I15 %in% "D" ~ "Sim, escola publica",
+                    QE_I15 %in% "E" ~ "Sim, escola publica", 
+                    QE_I15 %in% "F" ~ "Sim, sistema diferente"), 
+  tipo_escola = case_when (QE_I17 %in% "A" ~ "Escola publica", 
+                           QE_I17 %in% "B" ~ "Escola privada",
+                           QE_I17 %in% "C" ~ "Exterior", 
+                           QE_I17 %in% "D" ~ "Escola publica", 
+                           QE_I17 %in% "E" ~ "Escola privada", 
+                           QE_I17 %in% "F" ~ "Exterior"),
+  escola_privada = case_when (QE_I17 %in% "B" ~ "Sim", 
+                           QE_I17 %in% "A" ~ "Não",
+                           QE_I17 %in% "C" ~ "Não", 
+                           QE_I17 %in% "D" ~ "Não", 
+                           QE_I17 %in% "E" ~ "Sim", 
+                           QE_I17 %in% "F" ~ "Não"), 
+  escola_publica = case_when (QE_I17 %in% "A" ~ 1, 
+                           QE_I17 %in% "B" ~ 0, 
+                           QE_I17 %in% "D" ~ 1, 
+                           QE_I17 %in% "E" ~ 0, 
+                           QE_I17 %in% "C" ~ 0, 
+                           QE_I17 %in% "F" ~ 0), 
+  incentivo = case_when(QE_I19 %in% "A" ~ "Ninguem", 
+                        QE_I19 %in% "B" ~ "Pais", 
+                        QE_I19 %in% "C" ~ "Outros familiares", 
+                        QE_I19 %in% "D" ~ "Professores", 
+                        QE_I19 %in% "E" ~ "Líder religioso", 
+                        QE_I19 %in% "F" ~ "Colegas/Amigos",
+                        QE_I19 %in% "G" ~ "Outras pessoas"),
+  background = case_when(QE_I21 %in% "A" ~ "Sim",
+                         QE_I21 %in% "B" ~ "Nao"),
+  idioma = case_when(QE_I24 %in% "A" ~ 1,
+                     QE_I24 %in% "B" ~ 1,
+                      QE_I24 %in% "C" ~ 1, 
+                      QE_I24 %in% "D" ~ 1,
+                      QE_I24 %in% "E" ~ 0),
+  escolha_inst = case_when(QE_I26 %in% "A" ~ 1, 
+                           TRUE ~ 0))
+Enade_2016 = Enade_2016 %>% dplyr::select(CO_IES, CO_MODALIDADE, sexo, curso, raca, raca_cor, esc_pai, esc_mae, renda, renda_cod, auxilio, bolsa, pibic, extensao, monitoria, intercambio, cotas,cotas_dummy, tipo_escola, escola_privada, escola_publica, incentivo, background,idioma, escolha_inst)
+
+UFPE_2016 <- Enade_2016 %>% filter(CO_IES == 580, CO_MODALIDADE == 1)
+UPE_2016 <- Enade_2016 %>% filter(CO_IES == 409, CO_MODALIDADE == 1)
+```
+
+ #####2015
+Carregar o banco
+```{r}
+Enade_2015 <- read.csv2("C:/Users/Nayara Melo/Dropbox/MESTRADO/Dados (Quantitativos)/Microdados/microdados_enade_2015.txt", stringsAsFactors = TRUE)
+nrow(Enade_2015) #= 549487
+Enade_2015 = Enade_2015 %>% dplyr::select(CO_CATEGAD, CO_IES, CO_GRUPO,IN_MATUT, IN_VESPER, IN_NOTURNO, CO_MODALIDADE, CO_MUNIC_CURSO, TP_SEXO, QE_I02, QE_I04, QE_I05, QE_I08, QE_I09, QE_I10, QE_I11, QE_I12, QE_I13, QE_I14, QE_I15, QE_I16, QE_I17, QE_I19, QE_I20, QE_I21, QE_I23, QE_I24, QE_I25, QE_I26)%>% filter(complete.cases(.))
+nrow(Enade_2015) # = 468936
+#casos validos
+468936*100/549487
+```
+Filtros
+```{r}
+Enade_2015 <- Enade_2015%>% mutate(
+  sexo = case_when(TP_SEXO %in% "M" ~ 0,
+                      TP_SEXO %in% "F" ~1),
+  matutino = case_when(IN_MATUT %in% "1" ~ 1,
+                       TRUE ~ 0),
+  vespertino = case_when(IN_VESPER %in% "1" ~ 1,
+                       TRUE ~ 0), 
+   noturno = case_when(IN_NOTURNO %in% "1" ~ 1,
+                       TRUE ~ 0),
+   curso = case_when(CO_GRUPO %in% "1" ~ "Administracao", 
+                  CO_GRUPO %in% "2" ~ "Direito", 
+                  CO_GRUPO %in% "13" ~ "Ciencias Economicas", 
+                  CO_GRUPO %in% "18" ~ "Psicologia", 
+                  CO_GRUPO %in% "22" ~ "Ciencias Contabeis", 
+                  CO_GRUPO %in% "26" ~ "Design",
+                  CO_GRUPO %in% "29" ~ "Turismo", 
+                  CO_GRUPO %in% "38" ~ "Servico Social",
+                  CO_GRUPO %in% "67" ~ "Secretariado Executivo",
+                  CO_GRUPO %in% "81" ~ "Relacoes Internacionais", 
+                  CO_GRUPO %in% "83" ~ "Tecnologos", 
+                  CO_GRUPO %in% "84" ~ "Tecnologos", 
+                  CO_GRUPO %in% "85" ~ "Tecnologos",
+                  CO_GRUPO %in% "86" ~ "Tecnologos", 
+                  CO_GRUPO %in% "87" ~ "Tecnologos",
+                  CO_GRUPO %in% "88" ~ "Tecnologos",
+                  CO_GRUPO %in% "93" ~ "Tecnologos",
+                  CO_GRUPO %in% "94" ~ "Tecnologos",
+                  CO_GRUPO %in% "100" ~ "Adm Publica",
+                  CO_GRUPO %in% "101" ~ "Teologia",
+                  CO_GRUPO %in% "102" ~ "Tecnologos",
+                  CO_GRUPO %in% "103" ~ "Tecnologos",
+                  CO_GRUPO %in% "104" ~ "Tecnologos",
+                  CO_GRUPO %in% "105" ~ "Tecnologos",
+                  CO_GRUPO %in% "106" ~ "Tecnologos",
+                  CO_GRUPO %in% "803" ~ "Jornalismo",
+                  CO_GRUPO %in% "804" ~ "Publicidade"),
+  raca = case_when(QE_I02 %in% "A" ~ 0,
+                     QE_I02 %in% "B" ~ 1,
+                     QE_I02 %in% "C" ~ 1,
+                     QE_I02 %in% "D" ~ 1,
+                     QE_I02 %in% "E" ~ 1,
+                     QE_I02 %in% "F" ~ 1),
+  raca_cor = case_when(QE_I02 %in% "A" ~ "Branca",
+                     QE_I02 %in% "B" ~ "Preta",
+                     QE_I02 %in% "C" ~ "Amarela",
+                     QE_I02 %in% "D" ~ "Parda",
+                     QE_I02 %in% "E" ~ "Indigena",
+                     QE_I02 %in% "F" ~ "ND"),
+  esc_pai = case_when(QE_I04 %in% "E" ~ "Ensino Superior",
+                      QE_I04 %in% "F" ~ "Ensino Superior",
+                      QE_I04 %in% "D" ~ "Ensino Medio",
+                      QE_I04 %in% "B" ~ "Ensino Fundamental",
+                      QE_I04 %in% "C" ~ "Ensino Fundamental",
+                      QE_I04 %in% "A" ~ "Nenhuma"),
+  esc_mae = case_when(QE_I05 %in% "E" ~ "Ensino Superior",
+                      QE_I05 %in% "F" ~ "Ensino Superior",
+                      QE_I05 %in% "D" ~ "Ensino Medio",
+                      QE_I05 %in% "B" ~ "Ensino Fundamental",
+                      QE_I05 %in% "C" ~ "Ensino Fundamental",
+                      QE_I05 %in% "A" ~ "Nenhuma"),
+  renda = case_when(QE_I08 %in% "A" ~ "Ate 1,5 SM",
+                    QE_I08 %in% "B" ~ "De 1,5 a 3 SM",
+                    QE_I08 %in% "C" ~ "De 3 a 4,5 SM",
+                    QE_I08 %in% "D" ~ "De 4,5 a 6 SM",
+                    QE_I08 %in% "E" ~ "De 6 a 10 SM",
+                    QE_I08 %in% "F" ~ "De 10 a 30 SM", 
+                    QE_I08 %in% "G" ~ "Acima de 30 SM"),
+  renda_cod = case_when(QE_I08 %in% "A" ~ "Ate 3 SM",
+                    QE_I08 %in% "B" ~ "Ate 3 SM",
+                    QE_I08 %in% "C" ~ "De 3 a 4,5 SM",
+                    QE_I08 %in% "D" ~ "De 4,5 a 6 SM",
+                    QE_I08 %in% "E" ~ "De 6 a 10 SM",
+                    QE_I08 %in% "F" ~ "Acima de 10 SM", 
+                    QE_I08 %in% "G" ~ "Acima de 10 SM"),
+    auxilio = case_when(QE_I12 %in% "A" ~ 0, 
+                      QE_I12 %in% "B" ~ 1,
+                      QE_I12 %in% "C" ~ 1, 
+                      QE_I12 %in% "D" ~ 1, 
+                      QE_I12 %in% "E" ~ 1,
+                      QE_I12 %in% "F" ~ 1),
+  bolsa = case_when(QE_I13 %in% "A" ~ 0, 
+                      QE_I13 %in% "B" ~ 1,
+                      QE_I13 %in% "C" ~ 1, 
+                      QE_I13 %in% "D" ~ 1, 
+                      QE_I13 %in% "E" ~ 1,
+                      QE_I13 %in% "F" ~ 1),
+  pibic = case_when(QE_I13 %in% "B" ~ 1, 
+                      QE_I13 %in% "A" ~ 0,
+                      QE_I13 %in% "C" ~ 0, 
+                      QE_I13 %in% "D" ~ 0, 
+                      QE_I13 %in% "E" ~ 0,
+                      QE_I13 %in% "F" ~ 0),
+  extensao = case_when(QE_I13 %in% "C" ~ 1, 
+                      QE_I13 %in% "B" ~ 0,
+                      QE_I13 %in% "A" ~ 0, 
+                      QE_I13 %in% "D" ~ 0, 
+                      QE_I13 %in% "E" ~ 0,
+                      QE_I13 %in% "F" ~ 0),
+  monitoria = case_when(QE_I13 %in% "D" ~ 1, 
+                      QE_I13 %in% "B" ~ 0,
+                      QE_I13 %in% "C" ~ 0, 
+                      QE_I13 %in% "A" ~ 0, 
+                      QE_I13 %in% "E" ~ 0,
+                      QE_I13 %in% "F" ~ 0),
+  intercambio = case_when(QE_I14 %in% "A" ~ 0, 
+                      QE_I14 %in% "B" ~ 1,
+                      QE_I14 %in% "C" ~ 1, 
+                      QE_I14 %in% "D" ~ 1, 
+                      QE_I14 %in% "E" ~ 1,
+                      QE_I14 %in% "F" ~ 1),
+  cotas_dummy = case_when(QE_I15 %in% "A" ~ 0,
+                    QE_I15 %in% "B" ~ 1, 
+                    QE_I15 %in% "C" ~ 1, 
+                    QE_I15 %in% "D" ~ 1,
+                    QE_I15 %in% "E" ~ 1, 
+                    QE_I15 %in% "F" ~ 1),
+  cotas = case_when(QE_I15 %in% "A" ~ "Nao",
+                    QE_I15 %in% "B" ~ "Sim, etnico-racial", 
+                    QE_I15 %in% "C" ~ "Sim, renda", 
+                    QE_I15 %in% "D" ~ "Sim, escola publica",
+                    QE_I15 %in% "E" ~ "Sim, escola publica", 
+                    QE_I15 %in% "F" ~ "Sim, sistema diferente"), 
+  tipo_escola = case_when (QE_I17 %in% "A" ~ "Escola publica", 
+                           QE_I17 %in% "B" ~ "Escola privada",
+                           QE_I17 %in% "C" ~ "Exterior", 
+                           QE_I17 %in% "D" ~ "Escola publica", 
+                           QE_I17 %in% "E" ~ "Escola privada", 
+                           QE_I17 %in% "F" ~ "Exterior"),
+  escola_privada = case_when (QE_I17 %in% "B" ~ 1, 
+                           QE_I17 %in% "A" ~ 0,
+                           QE_I17 %in% "C" ~ 0, 
+                           QE_I17 %in% "D" ~ 0, 
+                           QE_I17 %in% "E" ~ 1, 
+                           QE_I17 %in% "F" ~ 0), 
+  escola_publica = case_when (QE_I17 %in% "A" ~ 1, 
+                           QE_I17 %in% "B" ~ 0, 
+                           QE_I17 %in% "D" ~ 1, 
+                           QE_I17 %in% "E" ~ 0, 
+                           QE_I17 %in% "C" ~ 0, 
+                           QE_I17 %in% "F" ~ 0), 
+  incentivo = case_when(QE_I19 %in% "A" ~ "Ninguem", 
+                        QE_I19 %in% "B" ~ "Pais", 
+                        QE_I19 %in% "C" ~ "Outros familiares", 
+                        QE_I19 %in% "D" ~ "Professores", 
+                        QE_I19 %in% "E" ~ "Líder religioso", 
+                        QE_I19 %in% "F" ~ "Colegas/Amigos",
+                        QE_I19 %in% "G" ~ "Outras pessoas"),
+  background = case_when(QE_I21 %in% "A" ~ "Sim",
+                         QE_I21 %in% "B" ~ "Nao"),
+  idioma = case_when(QE_I24 %in% "A" ~ 1,
+                     QE_I24 %in% "B" ~ 1,
+                      QE_I24 %in% "C" ~ 1, 
+                      QE_I24 %in% "D" ~ 1,
+                      QE_I24 %in% "E" ~ 0),
+  escolha_inst = case_when(QE_I26 %in% "A" ~ 1, 
+                           TRUE ~ 0))
+Enade_2015 = Enade_2015 %>% dplyr::select(CO_IES, CO_MODALIDADE, sexo, curso, raca, raca_cor, esc_pai, esc_mae, renda, renda_cod, auxilio, bolsa, pibic, extensao, monitoria, intercambio, cotas,cotas_dummy, tipo_escola, escola_privada, escola_publica, incentivo, background,idioma, escolha_inst)
+
+UFPE_2015 <- Enade_2015 %>% filter(CO_IES == 580, CO_MODALIDADE == 1)
+UPE_2015 <- Enade_2015 %>% filter(CO_IES == 409, CO_MODALIDADE == 1)
+```
+
+#### Remocao de bancos nao filtrados
+```{r}
+rm(Enade_2015, Enade_2016, Enade_2017, Enade_2018, Enade_2019)
+```
+
+#### Exportação para Power BI
+```{r}
+#UFPE
+write.csv(UFPE_2015, file = "ufpe_2015.csv", quote = TRUE)
+write.csv(UFPE_2016, file = "ufpe_2016.csv", quote = TRUE)
+write.csv(UFPE_2017, file = "ufpe_2017.csv", quote = TRUE)
+write.csv(UFPE_2018, file = "ufpe_2018.csv", quote = TRUE)
+write.csv(UFPE_2019, file = "ufpe_2019.csv", quote = TRUE)
+
+#UPE
+write.csv(UPE_2015, file = "upe_2015.csv", quote = TRUE)
+write.csv(UPE_2016, file = "upe_2016.csv", quote = TRUE)
+write.csv(UPE_2017, file = "upe_2017.csv", quote = TRUE)
+write.csv(UPE_2018, file = "upe_2018.csv", quote = TRUE)
+write.csv(UPE_2019, file = "upe_2019.csv", quote = TRUE)
+```
+####Variavel escolaridade paterna e materna - maximizada
+```{r}
+UFPE_2015<- UFPE_2015 %>% mutate(pai_num = case_when( esc_pai %in% "Nenhum" ~ 0, 
+                                   esc_pai %in% "Ensino Fundamental" ~ 1, 
+                                   esc_pai %in% "Ensino Medio" ~ 2, 
+                                   esc_pai %in% "Ensino Superior" ~ 3, TRUE ~ -1), 
+              mae_num = case_when( esc_mae %in% "Nenhum" ~ 0, 
+                                   esc_mae %in% " Ensino Fundamental" ~ 1,
+                                   esc_mae %in% "Ensino Medio" ~ 2, 
+                                   esc_mae %in% "Ensino Superior" ~ 3, TRUE ~ -1), 
+              esc_pais_max = ifelse(mae_num >= pai_num, mae_num, pai_num),
+              esc_pais_max = ifelse(esc_pais_max == -1, NA, esc_pais_max), 
+              esc_pais_max = factor(esc_pais_max, levels = 0:3, labels = c(
+"0 - Nenhum", "1 - Ensino Fundamental", "2 - Ensino Medio", "3 - Ensino Superior")))
+
+UFPE_2016<- UFPE_2016 %>% mutate(pai_num = case_when( esc_pai %in% "Nenhum" ~ 0, 
+                                   esc_pai %in% "Ensino Fundamental" ~ 1, 
+                                   esc_pai %in% "Ensino Medio" ~ 2, 
+                                   esc_pai %in% "Ensino Superior" ~ 3, TRUE ~ -1), 
+              mae_num = case_when( esc_mae %in% "Nenhum" ~ 0, 
+                                   esc_mae %in% " Ensino Fundamental" ~ 1,
+                                   esc_mae %in% "Ensino Medio" ~ 2, 
+                                   esc_mae %in% "Ensino Superior" ~ 3, TRUE ~ -1), 
+              esc_pais_max = ifelse(mae_num >= pai_num, mae_num, pai_num),
+              esc_pais_max = ifelse(esc_pais_max == -1, NA, esc_pais_max), 
+              esc_pais_max = factor(esc_pais_max, levels = 0:3, labels = c(
+"0 - Nenhum", "1 - Ensino Fundamental", "2 - Ensino Medio", "3 - Ensino Superior")))
+
+UFPE_2017<- UFPE_2017 %>% mutate(pai_num = case_when( esc_pai %in% "Nenhum" ~ 0, 
+                                   esc_pai %in% "Ensino Fundamental" ~ 1, 
+                                   esc_pai %in% "Ensino Medio" ~ 2, 
+                                   esc_pai %in% "Ensino Superior" ~ 3, TRUE ~ -1), 
+              mae_num = case_when( esc_mae %in% "Nenhum" ~ 0, 
+                                   esc_mae %in% " Ensino Fundamental" ~ 1,
+                                   esc_mae %in% "Ensino Medio" ~ 2, 
+                                   esc_mae %in% "Ensino Superior" ~ 3, TRUE ~ -1), 
+              esc_pais_max = ifelse(mae_num >= pai_num, mae_num, pai_num),
+              esc_pais_max = ifelse(esc_pais_max == -1, NA, esc_pais_max), 
+              esc_pais_max = factor(esc_pais_max, levels = 0:3, labels = c(
+"0 - Nenhum", "1 - Ensino Fundamental", "2 - Ensino Medio", "3 - Ensino Superior")))
+
+UFPE_2018<- UFPE_2018 %>% mutate(pai_num = case_when( esc_pai %in% "Nenhum" ~ 0, 
+                                   esc_pai %in% "Ensino Fundamental" ~ 1, 
+                                   esc_pai %in% "Ensino Medio" ~ 2, 
+                                   esc_pai %in% "Ensino Superior" ~ 3, TRUE ~ -1), 
+              mae_num = case_when( esc_mae %in% "Nenhum" ~ 0, 
+                                   esc_mae %in% " Ensino Fundamental" ~ 1,
+                                   esc_mae %in% "Ensino Medio" ~ 2, 
+                                   esc_mae %in% "Ensino Superior" ~ 3, TRUE ~ -1), 
+              esc_pais_max = ifelse(mae_num >= pai_num, mae_num, pai_num),
+              esc_pais_max = ifelse(esc_pais_max == -1, NA, esc_pais_max), 
+              esc_pais_max = factor(esc_pais_max, levels = 0:3, labels = c(
+"0 - Nenhum", "1 - Ensino Fundamental", "2 - Ensino Medio", "3 - Ensino Superior")))
+
+UFPE_2019<- UFPE_2019 %>% mutate(pai_num = case_when( esc_pai %in% "Nenhum" ~ 0, 
+                                   esc_pai %in% "Ensino Fundamental" ~ 1, 
+                                   esc_pai %in% "Ensino Medio" ~ 2, 
+                                   esc_pai %in% "Ensino Superior" ~ 3, TRUE ~ -1), 
+              mae_num = case_when( esc_mae %in% "Nenhum" ~ 0, 
+                                   esc_mae %in% " Ensino Fundamental" ~ 1,
+                                   esc_mae %in% "Ensino Medio" ~ 2, 
+                                   esc_mae %in% "Ensino Superior" ~ 3, TRUE ~ -1), 
+              esc_pais_max = ifelse(mae_num >= pai_num, mae_num, pai_num),
+              esc_pais_max = ifelse(esc_pais_max == -1, NA, esc_pais_max), 
+              esc_pais_max = factor(esc_pais_max, levels = 0:3, labels = c(
+"0 - Nenhum", "1 - Ensino Fundamental", "2 - Ensino Medio", "3 - Ensino Superior")))
+
+UPE_2015<- UPE_2015 %>% mutate(pai_num = case_when( esc_pai %in% "Nenhum" ~ 0, 
+                                   esc_pai %in% "Ensino Fundamental" ~ 1, 
+                                   esc_pai %in% "Ensino Medio" ~ 2, 
+                                   esc_pai %in% "Ensino Superior" ~ 3, TRUE ~ -1), 
+              mae_num = case_when( esc_mae %in% "Nenhum" ~ 0, 
+                                   esc_mae %in% " Ensino Fundamental" ~ 1,
+                                   esc_mae %in% "Ensino Medio" ~ 2, 
+                                   esc_mae %in% "Ensino Superior" ~ 3, TRUE ~ -1), 
+              esc_pais_max = ifelse(mae_num >= pai_num, mae_num, pai_num),
+              esc_pais_max = ifelse(esc_pais_max == -1, NA, esc_pais_max), 
+              esc_pais_max = factor(esc_pais_max, levels = 0:3, labels = c(
+"0 - Nenhum", "1 - Ensino Fundamental", "2 - Ensino Medio", "3 - Ensino Superior")))
+
+UPE_2016<- UPE_2016 %>% mutate(pai_num = case_when( esc_pai %in% "Nenhum" ~ 0, 
+                                   esc_pai %in% "Ensino Fundamental" ~ 1, 
+                                   esc_pai %in% "Ensino Medio" ~ 2, 
+                                   esc_pai %in% "Ensino Superior" ~ 3, TRUE ~ -1), 
+              mae_num = case_when( esc_mae %in% "Nenhum" ~ 0, 
+                                   esc_mae %in% " Ensino Fundamental" ~ 1,
+                                   esc_mae %in% "Ensino Medio" ~ 2, 
+                                   esc_mae %in% "Ensino Superior" ~ 3, TRUE ~ -1), 
+              esc_pais_max = ifelse(mae_num >= pai_num, mae_num, pai_num),
+              esc_pais_max = ifelse(esc_pais_max == -1, NA, esc_pais_max), 
+              esc_pais_max = factor(esc_pais_max, levels = 0:3, labels = c(
+"0 - Nenhum", "1 - Ensino Fundamental", "2 - Ensino Medio", "3 - Ensino Superior")))
+UPE_2017<- UPE_2017 %>% mutate(pai_num = case_when( esc_pai %in% "Nenhum" ~ 0, 
+                                   esc_pai %in% "Ensino Fundamental" ~ 1, 
+                                   esc_pai %in% "Ensino Medio" ~ 2, 
+                                   esc_pai %in% "Ensino Superior" ~ 3, TRUE ~ -1), 
+              mae_num = case_when( esc_mae %in% "Nenhum" ~ 0, 
+                                   esc_mae %in% " Ensino Fundamental" ~ 1,
+                                   esc_mae %in% "Ensino Medio" ~ 2, 
+                                   esc_mae %in% "Ensino Superior" ~ 3, TRUE ~ -1), 
+              esc_pais_max = ifelse(mae_num >= pai_num, mae_num, pai_num),
+              esc_pais_max = ifelse(esc_pais_max == -1, NA, esc_pais_max), 
+              esc_pais_max = factor(esc_pais_max, levels = 0:3, labels = c(
+"0 - Nenhum", "1 - Ensino Fundamental", "2 - Ensino Medio", "3 - Ensino Superior")))
+UPE_2018<- UPE_2018 %>% mutate(pai_num = case_when( esc_pai %in% "Nenhum" ~ 0, 
+                                   esc_pai %in% "Ensino Fundamental" ~ 1, 
+                                   esc_pai %in% "Ensino Medio" ~ 2, 
+                                   esc_pai %in% "Ensino Superior" ~ 3, TRUE ~ -1), 
+              mae_num = case_when( esc_mae %in% "Nenhum" ~ 0, 
+                                   esc_mae %in% " Ensino Fundamental" ~ 1,
+                                   esc_mae %in% "Ensino Medio" ~ 2, 
+                                   esc_mae %in% "Ensino Superior" ~ 3, TRUE ~ -1), 
+              esc_pais_max = ifelse(mae_num >= pai_num, mae_num, pai_num),
+              esc_pais_max = ifelse(esc_pais_max == -1, NA, esc_pais_max), 
+              esc_pais_max = factor(esc_pais_max, levels = 0:3, labels = c(
+"0 - Nenhum", "1 - Ensino Fundamental", "2 - Ensino Medio", "3 - Ensino Superior")))
+UPE_2019<- UPE_2019 %>% mutate(pai_num = case_when( esc_pai %in% "Nenhum" ~ 0, 
+                                   esc_pai %in% "Ensino Fundamental" ~ 1, 
+                                   esc_pai %in% "Ensino Medio" ~ 2, 
+                                   esc_pai %in% "Ensino Superior" ~ 3, TRUE ~ -1), 
+              mae_num = case_when( esc_mae %in% "Nenhum" ~ 0, 
+                                   esc_mae %in% " Ensino Fundamental" ~ 1,
+                                   esc_mae %in% "Ensino Medio" ~ 2, 
+                                   esc_mae %in% "Ensino Superior" ~ 3, TRUE ~ -1), 
+              esc_pais_max = ifelse(mae_num >= pai_num, mae_num, pai_num),
+              esc_pais_max = ifelse(esc_pais_max == -1, NA, esc_pais_max), 
+              esc_pais_max = factor(esc_pais_max, levels = 0:3, labels = c(
+"0 - Nenhum", "1 - Ensino Fundamental", "2 - Ensino Medio", "3 - Ensino Superior")))
+
+
+```
+####Modelos logísticos (testes)
+```{r}
+#modelo de cotas upe com renda
+cotasupe15 = glm(cotas_dummy ~ raca + renda + tipo_escola + esc_pai + esc_mae, family = binomial(link = "logit"), data = UPE_2015)
+summary(cotasupe15)
+plot(cotasupe15, which = 5)
+summary(stdres(cotasupe15))
+
+#modelo de cotas upe 2015 sem renda
+cotasupe15sr = glm(cotas_dummy ~ raca + tipo_escola + esc_pai + esc_mae, family = binomial(link = "logit"), data = UPE_2015)
+summary(cotasupe15sr)
+plot(cotasupe15sr, which = 5)
+summary(stdres(cotasupe15sr))
+
+#modelo de cotas ufpe 2015 com renda 
+
+cotasufpe15 = glm(cotas_dummy ~ raca + renda + tipo_escola + esc_pai + esc_mae, family = binomial(link = "logit"), data = UFPE_2015)
+summary(cotasufpe15)
+plot(cotasufpe15, which = 5)
+summary(stdres(cotasufpe15))
+
+#modelo de cotas ufpe 2015 sem renda
+cotasufpe15sr = glm(cotas_dummy ~ raca + tipo_escola + esc_pai + esc_mae, family = binomial(link = "logit"), data = UFPE_2015)
+summary(cotasufpe15sr)
+plot(cotasufpe15sr, which = 5)
+summary(stdres(cotasufpe15sr))
+
+#modelo de cotas upe 2016 com renda 
+cotasupe16 = glm(cotas_dummy ~ raca + renda + tipo_escola + esc_pai + esc_mae, family = binomial(link = "logit"), data = UPE_2016)
+summary(cotasupe16)
+plot(cotasupe16, which = 5)
+summary(stdres(cotasupe16))
+
+#modelo de cotas upe 2016 sem renda 
+
+cotasupe16sr = glm(cotas_dummy ~ raca + tipo_escola + esc_pai + esc_mae, family = binomial(link = "logit"), data = UPE_2016)
+summary(cotasupe16sr)
+plot(cotasupe16sr, which = 5)
+summary(stdres(cotasupe16sr))
+
+#modelo de cotas ufpe 2016 com renda 
+
+cotasufpe16 = glm(cotas_dummy ~ raca + tipo_escola + esc_pai + esc_mae, family = binomial(link = "logit"), data = UFPE_2016)
+summary(cotasufpe16)
+plot(cotasufpe16, which = 5)
+summary(stdres(cotasufpe16))
+
+#modelo de cotas ufpe 2019
+cotasufpe19 = glm(cotas_dummy ~ raca + tipo_escola + esc_pai + esc_mae, family = binomial(link = "logit"), data = UFPE_2019)
+summary(cotasufpe19)
+plot(cotasufpe19, which = 5)
+summary(stdres(cotasufpe19))
+
+#modelo de cotas ufpe 2019 recod 
+ufpe19recod = glm(cotas_dummy ~ raca + escola_privada + escola_publica + renda_cod + esc_pai + esc_mae, family = binomial(link = "logit"), data = UFPE_2019)
+summary(ufpe19recod)
+plot(ufpe19recod, which = 5)
+summary(stdres(ufpe19recod))
+
+```
+#intercambio
+#### 2019
+```{r}
+#ufpe 2019
+intercambio_ufpe19 = glm(intercambio ~ cotas_dummy + auxilio + tipo_escola + idioma + raca + esc_pais_max,  family = binomial(link = "logit"), data = UFPE_2019)
+intercambio_ufpe19
+summary(intercambio_ufpe19)
+summary(stdres(intercambio_ufpe19))
+PseudoR2(intercambio_ufpe19, which = "Nagelkerke")
+ggcoef(intercambio_ufpe19, exponentiate = TRUE, exclude_intercept = TRUE,
+  errorbar_height = .2, color = "orange", size = 4, shape = 20)
+```
+
+```{r}
+intercambio_upe19 = glm(intercambio ~ cotas_dummy + auxilio + tipo_escola + idioma + raca + esc_pais_max,  family = binomial(link = "logit"), data = UPE_2019)
+intercambio_upe19
+summary(intercambio_upe19)
+summary(stdres(intercambio_upe19))
+PseudoR2(intercambio_upe19, which = "Nagelkerke")
+ggcoef(intercambio_upe19, exponentiate = TRUE, exclude_intercept = TRUE,
+  errorbar_height = .2, color = "orange", size = 4, shape = 20)
+```
+#### 2018
+```{r}
+intercambio_upe18 = glm(intercambio ~ cotas_dummy + auxilio + tipo_escola + idioma + raca + esc_pais_max,  family = binomial(link = "logit"), data = UPE_2018)
+intercambio_upe18
+summary(intercambio_upe18)
+summary(stdres(intercambio_upe18))
+PseudoR2(intercambio_upe18, which = "Nagelkerke")
+ggcoef(intercambio_upe18, exponentiate = TRUE, exclude_intercept = TRUE,
+  errorbar_height = .2, color = "orange", size = 4, shape = 20)
+```
+#### 2017
+```{r}
+intercambio_upe17 = glm(intercambio ~ cotas_dummy + auxilio + idioma + raca + escola_publica + esc_pais_max,  family = binomial(link = "logit"), data = UPE_2017)
+intercambio_upe17
+summary(intercambio_upe17)
+summary(stdres(intercambio_upe17))
+PseudoR2(intercambio_upe17, which = "Nagelkerke")
+ggcoef(intercambio_upe17, exponentiate = TRUE, exclude_intercept = TRUE,
+  errorbar_height = .2, color = "orange", size = 4, shape = 20)
+```
+```{r}
+intercambio_ufpe17 = glm(intercambio ~ cotas_dummy + auxilio + idioma + raca + esc_pais_max + escola_publica,  family = binomial(link = "logit"), data = UFPE_2017)
+intercambio_ufpe17
+summary(intercambio_ufpe17)
+summary(stdres(intercambio_ufpe17))
+PseudoR2(intercambio_ufpe17, which = "Nagelkerke")
+ggcoef(intercambio_ufpe17, exponentiate = TRUE, exclude_intercept = TRUE,
+  errorbar_height = .2, color = "orange", size = 4, shape = 20)
+```
+####2016
+```{r}
+# upe 2016 inadequado
+intercambio_upe16 = glm(intercambio ~ cotas_dummy + auxilio + escola_privada + escola_publica + idioma + raca + esc_pais_max,  family = binomial(link = "logit"), data = UPE_2016)
+intercambio_upe16
+summary(intercambio_upe16)
+summary(stdres(intercambio_upe16))
+PseudoR2(intercambio_upe16, which = "Nagelkerke")
+ggcoef(intercambio_upe16, exponentiate = TRUE, exclude_intercept = TRUE,
+  errorbar_height = .2, color = "orange", size = 4, shape = 20)
+```
+####2015
+```{r}
+#upe 2015
+intercambio_upe15 = glm(intercambio ~ cotas_dummy + auxilio + idioma + raca + escola_publica + esc_pais_max,  family = binomial(link = "logit"), data = UPE_2015)
+intercambio_upe15
+summary(intercambio_upe15)
+summary(stdres(intercambio_upe15))
+PseudoR2(intercambio_upe15, which = "Nagelkerke")
+ggcoef(intercambio_upe15, exponentiate = TRUE, exclude_intercept = TRUE,
+  errorbar_height = .2, color = "orange", size = 4, shape = 20)
+
+#ufpe 2015
+intercambio_ufpe15 = glm(intercambio ~ cotas_dummy + auxilio + idioma + raca + escola_publica + esc_pais_max,  family = binomial(link = "logit"), data = UFPE_2015)
+intercambio_ufpe15
+summary(intercambio_ufpe15)
+summary(stdres(intercambio_ufpe15))
+PseudoR2(intercambio_ufpe15, which = "Nagelkerke")
+ggcoef(intercambio_ufpe15, exponentiate = TRUE, exclude_intercept = TRUE,
+  errorbar_height = .2, color = "orange", size = 4, shape = 20)
+```
+####monitoria
+#####2019
+```{r}
+monitoriaupe19 = glm(monitoria ~ cotas_dummy + auxilio + renda_cod + raca + esc_pais_max, family = binomial(link = "logit"), data = UPE_2019)
+summary(monitoriaupe19)
+summary(stdres(monitoriaupe19))
+PseudoR2(monitoriaupe19, which = "Nagelkerke")
+ggcoef(monitoriaupe19, exponentiate = TRUE, exclude_intercept = TRUE,
+  errorbar_height = .2, color = "orange", size = 4, shape = 20)
+```
+```{r}
+mUFPE2019 = glm(monitoria ~ cotas_dummy + auxilio + renda_cod + raca + esc_pais_max, family = binomial(link = "logit"), data = UFPE_2019)
+summary(mUFPE2019)
+summary(stdres(mUFPE2019))
+PseudoR2(mUFPE2019, which = "Nagelkerke")
+ggcoef(mUFPE2019, exponentiate = TRUE, exclude_intercept = TRUE,
+  errorbar_height = .2, color = "orange", size = 4, shape = 20)
+```
+#####2018
+```{r}
+#upe 2018
+mupe18 = glm(monitoria ~ cotas_dummy + auxilio + renda_cod + raca + esc_pais_max, family = binomial(link = "logit"), data = UPE_2018)
+summary(mupe18)
+summary(stdres(mupe18))
+PseudoR2(mupe18, which = "Nagelkerke")
+ggcoef(mupe18, exponentiate = TRUE, exclude_intercept = TRUE,
+  errorbar_height = .2, color = "orange", size = 4, shape = 20)
+#ufpe 2018
+mufpe18 = glm(monitoria ~ cotas_dummy + auxilio + renda_cod + raca + esc_pais_max, family = binomial(link = "logit"), data = UFPE_2018)
+summary(mufpe18)
+summary(stdres(mupe18))
+PseudoR2(mupe18, which = "Nagelkerke")
+ggcoef(mupe18, exponentiate = TRUE, exclude_intercept = TRUE,
+  errorbar_height = .2, color = "orange", size = 4, shape = 20)
+```
+####2017
+```{r}
+mufpe17 = glm(monitoria ~ cotas_dummy + auxilio + renda_cod + raca + esc_pais_max, family = binomial(link = "logit"), data = UFPE_2017)
+summary(mufpe17)
+summary(stdres(mufpe17))
+PseudoR2(mufpe17, which = "Nagelkerke")
+ggcoef(mufpe17, exponentiate = TRUE, exclude_intercept = TRUE,
+  errorbar_height = .2, color = "orange", size = 4, shape = 20)
+```
+```{r}
+mupe17 = glm(monitoria ~ cotas_dummy + auxilio + renda_cod + raca + esc_pais_max, family = binomial(link = "logit"), data = UPE_2017)
+summary(mupe17)
+summary(stdres(mupe17))
+PseudoR2(mupe17, which = "Nagelkerke")
+ggcoef(mupe17, exponentiate = TRUE, exclude_intercept = TRUE,
+  errorbar_height = .2, color = "orange", size = 4, shape = 20)
+```
+####2016
+```{r}
+#ufpe 2016
+mufpe16 = glm(monitoria ~ cotas_dummy + auxilio + renda_cod + raca + esc_pais_max, family = binomial(link = "logit"), data = UFPE_2016)
+summary(mufpe16)
+summary(stdres(mufpe16))
+PseudoR2(mufpe16, which = "Nagelkerke")
+ggcoef(mufpe16, exponentiate = TRUE, exclude_intercept = TRUE,
+  errorbar_height = .2, color = "orange", size = 4, shape = 20)
+
+#upe 2016
+mupe16 = glm(monitoria ~ cotas_dummy + auxilio + renda_cod + raca + esc_pais_max, family = binomial(link = "logit"), data = UPE_2016)
+summary(mupe16)
+summary(stdres(mupe16))
+PseudoR2(mupe16, which = "Nagelkerke")
+ggcoef(mupe16, exponentiate = TRUE, exclude_intercept = TRUE,
+  errorbar_height = .2, color = "orange", size = 4, shape = 20)
+```
+
+
+####2015
+```{r}
+#modelo inadequado UPE 2015
+mupe15 = glm(monitoria ~ cotas_dummy + auxilio + renda_cod + raca + esc_pais_max, family = binomial(link = "logit"), data = UPE_2015)
+summary(mupe15)
+summary(stdres(mupe15))
+PseudoR2(mupe15, which = "Nagelkerke")
+ggcoef(mupe15, exponentiate = TRUE, exclude_intercept = TRUE,
+  errorbar_height = .2, color = "orange", size = 4, shape = 20)
+```
+```{r}
+mufpe15 = glm(monitoria ~ cotas_dummy + auxilio + renda_cod + raca + esc_pais_max, family = binomial(link = "logit"), data = UFPE_2015)
+summary(mufpe15)
+summary(stdres(mufpe15))
+PseudoR2(mufpe15, which = "Nagelkerke")
+ggcoef(mufpe15, exponentiate = TRUE, exclude_intercept = TRUE,
+  errorbar_height = .2, color = "orange", size = 4, shape = 20)
+```
+
+####Modelos logísticos adequados 
+#####2015
+```{r}
+#ufpe 2015
+ufpe15 = glm(cotas_dummy ~ raca + renda_cod + esc_pai + esc_mae + escola_privada + escola_publica, family = binomial (link = "logit"), data = UFPE_2015)
+summary(ufpe15)
+summary(stdres(ufpe15))
+exp(cbind(OR = coef(ufpe15), confint.default(ufpe15)))
+PseudoR2(ufpe15, which = "Nagelkerke")
+ggcoef(ufpe15, exponentiate = TRUE, exclude_intercept = TRUE,
+  errorbar_height = .2, color = "pink", size = 4, shape = 15)
+```
+
+```{r}
+#upe 2015
+upe15 = glm(cotas_dummy ~ raca + renda_cod + escola_privada + esc_pai + esc_mae , family = binomial (link = "logit"), data = UPE_2015)
+summary(upe15)
+summary(stdres(upe15))
+exp(cbind(OR = coef(upe15), confint.default(upe15)))
+PseudoR2(upe15, which = "Nagelkerke")
+ggcoef(upe15, exponentiate = TRUE,
+  errorbar_height = .2, color = "pink", exclude_intercept = TRUE, size = 4, shape = 15)
+```
+
+####2016
+```{r}
+#upe 2016
+upe16 = glm(cotas_dummy ~ renda_cod + raca + esc_pai + esc_mae + escola_privada, family = binomial (link = "logit"), data = UPE_2016)
+summary(upe16)
+summary(stdres(upe16))
+exp(cbind(OR = coef(upe16), confint.default(upe16)))
+PseudoR2(upe16, which = "Nagelkerke")
+ggcoef(upe16, exponentiate = TRUE,
+  errorbar_height = .2, color = "pink", exclude_intercept = TRUE, size = 4, shape = 15)
+```
+```{r}
+#ufpe 2016
+ufpe16 = glm(cotas_dummy ~ renda_cod + raca + esc_pai + esc_mae + escola_privada, family = binomial (link = "logit"), data = UFPE_2016)
+summary(ufpe16)
+summary(stdres(ufpe16))
+exp(cbind(OR = coef(ufpe16), confint.default(ufpe16)))
+PseudoR2(ufpe16, which = "Nagelkerke")
+ggcoef(ufpe16, exponentiate = TRUE,
+  errorbar_height = .2, color = "pink", exclude_intercept = TRUE, size = 4, shape = 15)
+```
+
+#####2017
+```{r}
+#ufpe 2017
+ufpe17 = glm(cotas_dummy ~ renda_cod + raca + esc_pai + esc_mae + escola_privada + escola_publica, family = binomial (link = "logit"), data = UFPE_2017)
+summary(ufpe17)
+summary(stdres(ufpe17))
+exp(cbind(OR = coef(ufpe17), confint.default(ufpe17)))
+PseudoR2(ufpe17, which = "Nagelkerke")
+ggcoef(ufpe17, exponentiate = TRUE,
+  errorbar_height = .2, color = "pink", exclude_intercept = TRUE, size = 4, shape = 15)
+```
+```{r}
+#upe 2017
+upe17 = glm(cotas_dummy ~ renda_cod + raca + esc_pai + esc_mae + escola_privada + escola_publica, family = binomial (link = "logit"), data = UPE_2017)
+summary(upe17)
+summary(stdres(upe17))
+exp(cbind(OR = coef(upe17), confint.default(upe17)))
+PseudoR2(upe17, which = "Nagelkerke")
+ggcoef(upe17, exponentiate = TRUE,
+  errorbar_height = .2, color = "pink", exclude_intercept = TRUE, size = 4, shape = 15)
+```
+##### 2018
+```{r}
+#ufpe 2018
+ufpe18 = glm(cotas_dummy ~ renda_cod + raca + esc_pai + esc_mae + escola_privada + escola_publica, family = binomial (link = "logit"), data = UFPE_2018)
+summary(ufpe18)
+summary(stdres(ufpe18))
+exp(cbind(OR = coef(ufpe18), confint.default(ufpe18)))
+PseudoR2(ufpe18, which = "Nagelkerke")
+ggcoef(ufpe18, exponentiate = TRUE,
+  errorbar_height = .2, color = "lightgreen", exclude_intercept = TRUE, size = 4, shape = 15)
+```
+```{r}
+#upe 2018
+upe18 = glm(cotas_dummy ~ renda_cod + raca + esc_pai + esc_mae + escola_privada + escola_publica, family = binomial (link = "logit"), data = UPE_2018)
+summary(upe18)
+summary(stdres(upe18))
+exp(cbind(OR = coef(upe18), confint.default(upe18)))
+PseudoR2(upe18, which = "Nagelkerke")
+ggcoef(upe18, exponentiate = TRUE,
+  errorbar_height = .2, color = "lightgreen", exclude_intercept = TRUE, size = 4, shape = 15)
+```
+
+####2019
+```{r}
+#ufpe 2019
+ufpe19 = glm(cotas_dummy ~ renda_cod + raca + esc_pai + esc_mae + escola_privada + escola_publica, family = binomial (link = "logit"), data = UFPE_2019)
+summary(ufpe19)
+summary(stdres(ufpe19))
+exp(cbind(OR = coef(ufpe19), confint.default(ufpe19)))
+PseudoR2(ufpe19, which = "Nagelkerke")
+ggcoef(ufpe19, exponentiate = TRUE,
+  errorbar_height = .2, color = "blue", exclude_intercept = TRUE, size = 4, shape = 15)
+```
+
+```{r}
+#upe 2019
+upe19 = glm(cotas_dummy ~ renda_cod + raca + esc_pai + esc_mae + escola_privada + escola_publica, family = binomial (link = "logit"), data = UPE_2019)
+summary(upe19)
+summary(stdres(upe19))
+exp(cbind(OR = coef(upe19), confint.default(upe19)))
+PseudoR2(upe19, which = "Nagelkerke")
+ggcoef(upe19, exponentiate = TRUE,
+  errorbar_height = .2, color = "blue", exclude_intercept = TRUE, size = 4, shape = 15)
+```
+
+##### modelo de auxílio 
+####2019
+```{r}
+# AUXILIO UFPE 2019
+auxufpe19 = glm(auxilio ~ cotas + renda_cod + esc_pais_max + raca, family = binomial(link = "logit"), data = UFPE_2019)
+summary(stdres(auxufpe19))
+PseudoR2(auxufpe19, which = "Nagelkerke")
+ggcoef(auxufpe19, exponentiate = TRUE,
+  errorbar_height = .2, color = "purple", exclude_intercept = TRUE, size = 4, shape = 18)
+```
+```{r}
+## AUXILIO UPE 2019
+auxupe19 = glm(auxilio ~ cotas + renda_cod + esc_pais_max + raca, family = binomial(link = "logit"), data = UPE_2019)
+summary(stdres(auxupe19))
+PseudoR2(auxupe19, which = "Nagelkerke")
+ggcoef(auxupe19, exponentiate = TRUE,
+  errorbar_height = .2, color = "purple", exclude_intercept = TRUE, size = 4, shape = 18)
+```
+####2018
+```{r}
+auxufpe2018 = glm(auxilio ~ cotas_dummy + raca + renda_cod + esc_pais_max, family = binomial(link = "logit"), data = UFPE_2018)
+summary(stdres(auxufpe2018))
+PseudoR2(auxufpe2018, which = "Nagelkerke")
+ggcoef(auxufpe2018, exponentiate = TRUE,
+  errorbar_height = .2, color = "purple", exclude_intercept = TRUE, size = 4, shape = 18)
+```
+
+```{r}
+auxupe2018 = glm(auxilio ~ cotas_dummy + raca + renda_cod + esc_pais_max, family = binomial(link = "logit"), data = UPE_2018)
+summary(stdres(auxupe2018))
+PseudoR2(auxupe2018, which = "Nagelkerke")
+ggcoef(auxupe2018, exponentiate = TRUE,
+  errorbar_height = .2, color = "purple", exclude_intercept = TRUE, size = 4, shape = 18)
+```
+
+####2017
+```{r}
+auxupe2017 = glm(auxilio ~ cotas_dummy + raca + renda_cod + esc_pais_max, family = binomial(link = "logit"), data = UPE_2017)
+summary(stdres(auxupe2017))
+PseudoR2(auxupe2017, which = "Nagelkerke")
+ggcoef(auxupe2017, exponentiate = TRUE,
+  errorbar_height = .2, color = "purple", exclude_intercept = TRUE, size = 4, shape = 18)
+```
+```{r}
+auxufpe2017 = glm(auxilio ~ cotas_dummy + raca + renda_cod + esc_pais_max, family = binomial(link = "logit"), data = UFPE_2017)
+summary(stdres(auxufpe2017))
+PseudoR2(auxufpe2017, which = "Nagelkerke")
+ggcoef(auxufpe2017, exponentiate = TRUE,
+  errorbar_height = .2, color = "purple", exclude_intercept = TRUE, size = 4, shape = 18)
+```
+
+```{r}
+# AUXILIO UPE 2017
+auxupe2017 = glm(auxilio ~ cotas_dummy + raca + renda_cod + esc_pais_max, family = binomial(link = "logit"), data = UPE_2017)
+summary(stdres(auxupe2017))
+PseudoR2(auxupe2017, which = "Nagelkerke")
+ggcoef(auxupe2017, exponentiate = TRUE,
+  errorbar_height = .2, color = "purple", exclude_intercept = TRUE, size = 4, shape = 18)
+```
+```{r}
+# AUXILIO UFPE 2017
+auxufpe2017 = glm(auxilio ~ cotas_dummy + raca + renda_cod + esc_pais_max, family = binomial(link = "logit"), data = UFPE_2017)
+summary(stdres(auxufpe2017))
+PseudoR2(auxufpe2017, which = "Nagelkerke")
+ggcoef(auxufpe2017, exponentiate = TRUE,
+  errorbar_height = .2, color = "purple", exclude_intercept = TRUE, size = 4, shape = 18)
+```
+####2016
+```{r}
+auxupe2016 = glm(auxilio ~ cotas_dummy + raca + renda_cod + esc_pais_max, family = binomial(link = "logit"), data = UPE_2016)
+summary(stdres(auxupe2016))
+PseudoR2(auxupe2016, which = "Nagelkerke")
+ggcoef(auxupe2016, exponentiate = TRUE,
+  errorbar_height = .2, color = "purple", exclude_intercept = TRUE, size = 4, shape = 18)
+```
+####2015
+```{r}
+auxufpe2015 = glm(auxilio ~ cotas_dummy + raca + renda_cod + esc_mae, family = binomial(link = "logit"), data = UFPE_2015)
+summary(stdres(auxufpe2015))
+PseudoR2(auxufpe2015, which = "Nagelkerke")
+ggcoef(auxufpe2015, exponentiate = TRUE,
+  errorbar_height = .2, color = "purple", exclude_intercept = TRUE, size = 4, shape = 18)
+```
+```{r} 
+#UPE 2015 INADEQUADRO
+auxupe2015 = glm(auxilio ~ cotas_dummy + renda_cod + esc_mae, family = binomial(link = "logit"), data = UPE_2015)
+summary(stdres(auxupe2015))
+PseudoR2(auxupe2015, which = "Nagelkerke")
+ggcoef(auxupe2015, exponentiate = TRUE,
+  errorbar_height = .2, color = "purple", exclude_intercept = TRUE, size = 4, shape = 18)
+```
+###extensao
+####2019
+```{r}
+#ufpe 2019
+extensao_ufpe19 = glm(extensao ~ cotas_dummy + auxilio + renda_cod + raca + esc_pais_max,  family = binomial(link = "logit"), data = UFPE_2019)
+extensao_ufpe19
+summary(extensao_ufpe19)
+summary(stdres(extensao_ufpe19))
+PseudoR2(extensao_ufpe19, which = "Nagelkerke")
+ggcoef(extensao_ufpe19, exponentiate = TRUE, exclude_intercept = TRUE,
+  errorbar_height = .2, color = "orange", size = 4, shape = 20)
+```
+```{r}
+extensao_upe19 = glm(extensao ~ cotas_dummy + auxilio + renda_cod + raca + esc_pais_max,  family = binomial(link = "logit"), data = UPE_2019)
+extensao_upe19
+summary(extensao_upe19)
+summary(stdres(extensao_upe19))
+PseudoR2(extensao_upe19, which = "Nagelkerke")
+ggcoef(extensao_upe19, exponentiate = TRUE, exclude_intercept = TRUE,
+  errorbar_height = .2, color = "orange", size = 4, shape = 20)
+```
+#### 2018
+```{r}
+#ufpe 2018
+extensao_ufpe18 = glm(extensao ~ cotas_dummy + auxilio + renda_cod + raca + esc_pais_max,  family = binomial(link = "logit"), data = UFPE_2018)
+extensao_ufpe18
+summary(extensao_ufpe18)
+summary(stdres(extensao_ufpe18))
+PseudoR2(extensao_ufpe18, which = "Nagelkerke")
+ggcoef(extensao_ufpe18, exponentiate = TRUE, exclude_intercept = TRUE,
+  errorbar_height = .2, color = "orange", size = 4, shape = 20)
+```
+```{r}
+#upe 2018
+extensao_upe18 = glm(extensao ~ cotas_dummy + auxilio + renda_cod + raca + esc_pais_max,  family = binomial(link = "logit"), data = UPE_2018)
+extensao_upe18
+summary(extensao_upe18)
+summary(stdres(extensao_upe18))
+PseudoR2(extensao_upe18, which = "Nagelkerke")
+ggcoef(extensao_upe18, exponentiate = TRUE, exclude_intercept = TRUE,
+  errorbar_height = .2, color = "orange", size = 4, shape = 20)
+nrow(model.matrix(extensao_upe18))
+```
+#### 2017
+```{r}
+#ufpe 2017
+extensao_ufpe17 = glm(extensao ~ cotas_dummy + auxilio + renda_cod + raca + esc_pais_max,  family = binomial(link = "logit"), data = UFPE_2017)
+extensao_ufpe17
+summary(extensao_ufpe17)
+summary(stdres(extensao_ufpe17))
+PseudoR2(extensao_ufpe17, which = "Nagelkerke")
+ggcoef(extensao_ufpe17, exponentiate = TRUE, exclude_intercept = TRUE,
+  errorbar_height = .2, color = "orange", size = 4, shape = 20)
+```
+```{r}
+extensao_upe17 = glm(extensao ~ cotas_dummy + auxilio + renda_cod + raca + esc_pais_max,  family = binomial(link = "logit"), data = UPE_2017)
+extensao_upe17
+summary(extensao_upe17)
+summary(stdres(extensao_upe17))
+PseudoR2(extensao_upe17, which = "Nagelkerke")
+ggcoef(extensao_upe17, exponentiate = TRUE, exclude_intercept = TRUE,
+  errorbar_height = .2, color = "orange", size = 4, shape = 20)
+```
+#### 2016
+```{r}
+#upe 2016
+extensao_upe16 = glm(extensao ~ cotas_dummy + auxilio + renda_cod + raca + esc_pais_max,  family = binomial(link = "logit"), data = UPE_2016)
+extensao_upe16
+summary(extensao_upe16)
+summary(stdres(extensao_upe16))
+PseudoR2(extensao_upe16, which = "Nagelkerke")
+ggcoef(extensao_upe16, exponentiate = TRUE, exclude_intercept = TRUE,
+  errorbar_height = .2, color = "orange", size = 4, shape = 20)
+```
+```{r}
+#ufpe 2016
+extensao_ufpe16 = glm(extensao ~ cotas_dummy + auxilio + renda_cod + raca + esc_pais_max,  family = binomial(link = "logit"), data = UFPE_2016)
+extensao_ufpe16
+summary(extensao_ufpe16)
+summary(stdres(extensao_ufpe16))
+PseudoR2(extensao_ufpe16, which = "Nagelkerke")
+ggcoef(extensao_ufpe16, exponentiate = TRUE, exclude_intercept = TRUE,
+  errorbar_height = .2, color = "orange", size = 4, shape = 20)
+```
+#### 2015
+```{r}
+#ufpe 2015
+extensao_ufpe15 = glm(extensao ~ cotas_dummy + auxilio + renda_cod + raca + esc_pais_max,  family = binomial(link = "logit"), data = UFPE_2015)
+extensao_ufpe15
+summary(extensao_ufpe15)
+summary(stdres(extensao_ufpe15))
+PseudoR2(extensao_ufpe15, which = "Nagelkerke")
+ggcoef(extensao_ufpe15, exponentiate = TRUE, exclude_intercept = TRUE,
+  errorbar_height = .2, color = "orange", size = 4, shape = 20)
+#upe 2015
+extensao_upe15 = glm(extensao ~ cotas_dummy + auxilio + renda_cod + raca + esc_pais_max,  family = binomial(link = "logit"), data = UPE_2015)
+extensao_upe15
+summary(extensao_upe15)
+summary(stdres(extensao_upe15))
+PseudoR2(extensao_upe15, which = "Nagelkerke")
+ggcoef(extensao_upe15, exponentiate = TRUE, exclude_intercept = TRUE,
+  errorbar_height = .2, color = "orange", size = 4, shape = 20)
+```
+###pibic
+####2019
+```{r}
+#ufpe 2019
+pibic_ufpe19 = glm(pibic ~ cotas_dummy + auxilio + renda_cod + raca + esc_pais_max,  family = binomial(link = "logit"), data = UFPE_2019)
+pibic_ufpe19
+summary(pibic_ufpe19)
+summary(stdres(pibic_ufpe19))
+PseudoR2(pibic_ufpe19, which = "Nagelkerke")
+ggcoef(pibic_ufpe19, exponentiate = TRUE, exclude_intercept = TRUE,
+  errorbar_height = .2, color = "orange", size = 4, shape = 20)
+#upe 2019
+pibic_upe19 = glm(pibic ~ cotas_dummy + auxilio + renda_cod + raca + esc_pais_max,  family = binomial(link = "logit"), data = UPE_2019)
+pibic_upe19
+summary(pibic_upe19)
+summary(stdres(pibic_upe19))
+PseudoR2(pibic_upe19, which = "Nagelkerke")
+ggcoef(pibic_upe19, exponentiate = TRUE, exclude_intercept = TRUE,
+  errorbar_height = .2, color = "orange", size = 4, shape = 20)
+```
+####2018
+```{r}
+#upe 2018
+pibic_upe18 = glm(pibic ~ cotas_dummy + auxilio + renda_cod + raca + esc_pais_max,  family = binomial(link = "logit"), data = UPE_2018)
+pibic_upe18
+summary(pibic_upe18)
+summary(stdres(pibic_upe18))
+PseudoR2(pibic_upe18, which = "Nagelkerke")
+ggcoef(pibic_upe18, exponentiate = TRUE, exclude_intercept = TRUE,
+  errorbar_height = .2, color = "orange", size = 4, shape = 20)
+```
+```{r}
+#ufpe 2018
+pibic_ufpe18 = glm(pibic ~ cotas_dummy + auxilio + renda_cod + raca + esc_pais_max,  family = binomial(link = "logit"), data = UFPE_2018)
+pibic_ufpe18
+summary(pibic_ufpe18)
+summary(stdres(pibic_ufpe18))
+PseudoR2(pibic_ufpe18, which = "Nagelkerke")
+ggcoef(pibic_ufpe18, exponentiate = TRUE, exclude_intercept = TRUE,
+  errorbar_height = .2, color = "orange", size = 4, shape = 20)
+```
+####2017
+```{r}
+#ufpe 2017
+pibic_ufpe17 = glm(pibic ~ cotas_dummy + auxilio + renda_cod + raca + esc_pais_max,  family = binomial(link = "logit"), data = UFPE_2017)
+pibic_ufpe17
+summary(pibic_ufpe17)
+summary(stdres(pibic_ufpe17))
+PseudoR2(pibic_ufpe17, which = "Nagelkerke")
+ggcoef(pibic_ufpe17, exponentiate = TRUE, exclude_intercept = TRUE,
+  errorbar_height = .2, color = "orange", size = 4, shape = 20)
+```
+```{r}
+#upe 2017
+pibic_upe17 = glm(pibic ~ cotas_dummy + auxilio + renda_cod + raca + esc_pais_max,  family = binomial(link = "logit"), data = UPE_2017)
+pibic_upe17
+summary(pibic_upe17)
+summary(stdres(pibic_upe17))
+PseudoR2(pibic_upe17, which = "Nagelkerke")
+ggcoef(pibic_upe17, exponentiate = TRUE, exclude_intercept = TRUE,
+  errorbar_height = .2, color = "orange", size = 4, shape = 20)
+```
+#### 2016
+```{r}
+#ufpe 2016
+pibic_ufpe16 = glm(pibic ~ cotas_dummy + auxilio + renda_cod + raca + esc_pais_max,  family = binomial(link = "logit"), data = UFPE_2016)
+pibic_ufpe16
+summary(pibic_ufpe16)
+summary(stdres(pibic_ufpe16))
+PseudoR2(pibic_ufpe16, which = "Nagelkerke")
+ggcoef(pibic_ufpe16, exponentiate = TRUE, exclude_intercept = TRUE,
+  errorbar_height = .2, color = "orange", size = 4, shape = 20)
+#upe 2016
+pibic_upe16 = glm(pibic ~ cotas_dummy + auxilio + renda_cod + raca + esc_pais_max,  family = binomial(link = "logit"), data = UPE_2016)
+pibic_upe16
+summary(pibic_upe16)
+summary(stdres(pibic_upe16))
+PseudoR2(pibic_upe16, which = "Nagelkerke")
+ggcoef(pibic_upe16, exponentiate = TRUE, exclude_intercept = TRUE,
+  errorbar_height = .2, color = "orange", size = 4, shape = 20)
+```
+####2015
+```{r}
+#ufpe 2015
+pibic_ufpe15 = glm(pibic ~ cotas_dummy + auxilio + renda_cod + raca + esc_pais_max,  family = binomial(link = "logit"), data = UFPE_2015)
+pibic_ufpe15
+summary(pibic_ufpe15)
+summary(stdres(pibic_ufpe15))
+PseudoR2(pibic_ufpe15, which = "Nagelkerke")
+ggcoef(pibic_ufpe15, exponentiate = TRUE, exclude_intercept = TRUE,
+  errorbar_height = .2, color = "orange", size = 4, shape = 20)
+#upe 2015
+pibic_upe15 = glm(pibic ~ cotas_dummy + auxilio + renda_cod + raca + esc_pais_max,  family = binomial(link = "logit"), data = UPE_2015)
+pibic_upe15
+summary(pibic_upe15)
+summary(stdres(pibic_upe15))
+PseudoR2(pibic_upe15, which = "Nagelkerke")
+ggcoef(pibic_upe15, exponentiate = TRUE, exclude_intercept = TRUE,
+  errorbar_height = .2, color = "orange", size = 4, shape = 20)
+```
