@@ -5,7 +5,7 @@ date: "`r Sys.Date()`"
 output: html_document
 ---
 
-#####Packages
+#Packages
 ```{r message=FALSE, warning=FALSE}
 library(tidyverse)
 library(readr)
@@ -21,8 +21,8 @@ library(GGally)
 library(RColorBrewer)
 ```
 
-####Banco de Dados e Filtro de questões
-##### 2019
+#Banco de Dados e Filtro de questões
+#2019
 Carregar o banco
 ```{r message=FALSE, warning=FALSE}
 #carregar o banco
@@ -198,7 +198,7 @@ Enade_2019 = Enade_2019 %>% dplyr::select(CO_IES, CO_MODALIDADE, sexo, turno, cu
 UFPE_2019 <- Enade_2019 %>% filter(CO_IES == 580, CO_MODALIDADE == 1)
 UPE_2019 <- Enade_2019 %>% filter(CO_IES == 409, CO_MODALIDADE == 1)
 ```
-#####2018
+#2018
 Carregar o banco
 ```{r}
 #Carregar o Banco
@@ -370,7 +370,7 @@ Enade_2018 = Enade_2018 %>% dplyr::select(CO_IES, CO_MODALIDADE, sexo, turno, cu
 UFPE_2018 <- Enade_2018 %>% filter(CO_IES == 580, CO_MODALIDADE == 1)
 UPE_2018 <- Enade_2018 %>% filter(CO_IES == 409, CO_MODALIDADE == 1)
 ```
-##### 2017
+# 2017
 Carregar o banco
 ```{r}
 Enade_2017 <- read.csv2("C:/Users/Nayara Melo/Dropbox/MESTRADO/Dados (Quantitativos)/Microdados/microdados_enade_2017.txt", stringsAsFactors = TRUE)
@@ -558,7 +558,7 @@ Enade_2017 = Enade_2017 %>% dplyr::select(CO_IES, CO_MODALIDADE, sexo, turno, cu
 UFPE_2017 <- Enade_2017 %>% filter(CO_IES == 580, CO_MODALIDADE == 1)
 UPE_2017 <- Enade_2017 %>% filter(CO_IES == 409, CO_MODALIDADE == 1)
 ```
-#####2016
+# 2016
 Carregar o banco
 ```{r}
 Enade_2016 <- read.csv2("C:/Users/Nayara Melo/Dropbox/MESTRADO/Dados (Quantitativos)/Microdados/microdados_enade_2016.txt", stringsAsFactors = TRUE)
@@ -723,7 +723,7 @@ UFPE_2016 <- Enade_2016 %>% filter(CO_IES == 580, CO_MODALIDADE == 1)
 UPE_2016 <- Enade_2016 %>% filter(CO_IES == 409, CO_MODALIDADE == 1)
 ```
 
- #####2015
+# 2015
 Carregar o banco
 ```{r}
 Enade_2015 <- read.csv2("C:/Users/Nayara Melo/Dropbox/MESTRADO/Dados (Quantitativos)/Microdados/microdados_enade_2015.txt", stringsAsFactors = TRUE)
@@ -897,12 +897,12 @@ UFPE_2015 <- Enade_2015 %>% filter(CO_IES == 580, CO_MODALIDADE == 1)
 UPE_2015 <- Enade_2015 %>% filter(CO_IES == 409, CO_MODALIDADE == 1)
 ```
 
-#### Remocao de bancos nao filtrados
+# Remocao de bancos nao filtrados
 ```{r}
 rm(Enade_2015, Enade_2016, Enade_2017, Enade_2018, Enade_2019)
 ```
 
-#### Exportação para Power BI
+# Exportação para Power BI
 ```{r}
 #UFPE
 write.csv(UFPE_2015, file = "ufpe_2015.csv", quote = TRUE)
@@ -918,7 +918,7 @@ write.csv(UPE_2017, file = "upe_2017.csv", quote = TRUE)
 write.csv(UPE_2018, file = "upe_2018.csv", quote = TRUE)
 write.csv(UPE_2019, file = "upe_2019.csv", quote = TRUE)
 ```
-####Variavel escolaridade paterna e materna - maximizada
+# Variavel escolaridade paterna e materna - maximizada
 ```{r}
 UFPE_2015<- UFPE_2015 %>% mutate(pai_num = case_when( esc_pai %in% "Nenhum" ~ 0, 
                                    esc_pai %in% "Ensino Fundamental" ~ 1, 
@@ -1049,7 +1049,7 @@ UPE_2019<- UPE_2019 %>% mutate(pai_num = case_when( esc_pai %in% "Nenhum" ~ 0,
 
 
 ```
-####Modelos logísticos (testes)
+# Modelos logísticos (testes)
 ```{r}
 #modelo de cotas upe com renda
 cotasupe15 = glm(cotas_dummy ~ raca + renda + tipo_escola + esc_pai + esc_mae, family = binomial(link = "logit"), data = UPE_2015)
@@ -1110,7 +1110,7 @@ summary(stdres(ufpe19recod))
 
 ```
 #intercambio
-#### 2019
+# 2019
 ```{r}
 #ufpe 2019
 intercambio_ufpe19 = glm(intercambio ~ cotas_dummy + auxilio + tipo_escola + idioma + raca + esc_pais_max,  family = binomial(link = "logit"), data = UFPE_2019)
@@ -1131,7 +1131,7 @@ PseudoR2(intercambio_upe19, which = "Nagelkerke")
 ggcoef(intercambio_upe19, exponentiate = TRUE, exclude_intercept = TRUE,
   errorbar_height = .2, color = "orange", size = 4, shape = 20)
 ```
-#### 2018
+# 2018
 ```{r}
 intercambio_upe18 = glm(intercambio ~ cotas_dummy + auxilio + tipo_escola + idioma + raca + esc_pais_max,  family = binomial(link = "logit"), data = UPE_2018)
 intercambio_upe18
@@ -1141,7 +1141,7 @@ PseudoR2(intercambio_upe18, which = "Nagelkerke")
 ggcoef(intercambio_upe18, exponentiate = TRUE, exclude_intercept = TRUE,
   errorbar_height = .2, color = "orange", size = 4, shape = 20)
 ```
-#### 2017
+# 2017
 ```{r}
 intercambio_upe17 = glm(intercambio ~ cotas_dummy + auxilio + idioma + raca + escola_publica + esc_pais_max,  family = binomial(link = "logit"), data = UPE_2017)
 intercambio_upe17
@@ -1160,7 +1160,7 @@ PseudoR2(intercambio_ufpe17, which = "Nagelkerke")
 ggcoef(intercambio_ufpe17, exponentiate = TRUE, exclude_intercept = TRUE,
   errorbar_height = .2, color = "orange", size = 4, shape = 20)
 ```
-####2016
+# 2016
 ```{r}
 # upe 2016 inadequado
 intercambio_upe16 = glm(intercambio ~ cotas_dummy + auxilio + escola_privada + escola_publica + idioma + raca + esc_pais_max,  family = binomial(link = "logit"), data = UPE_2016)
@@ -1171,7 +1171,7 @@ PseudoR2(intercambio_upe16, which = "Nagelkerke")
 ggcoef(intercambio_upe16, exponentiate = TRUE, exclude_intercept = TRUE,
   errorbar_height = .2, color = "orange", size = 4, shape = 20)
 ```
-####2015
+# 2015
 ```{r}
 #upe 2015
 intercambio_upe15 = glm(intercambio ~ cotas_dummy + auxilio + idioma + raca + escola_publica + esc_pais_max,  family = binomial(link = "logit"), data = UPE_2015)
@@ -1191,8 +1191,8 @@ PseudoR2(intercambio_ufpe15, which = "Nagelkerke")
 ggcoef(intercambio_ufpe15, exponentiate = TRUE, exclude_intercept = TRUE,
   errorbar_height = .2, color = "orange", size = 4, shape = 20)
 ```
-####monitoria
-#####2019
+# monitoria
+# 2019
 ```{r}
 monitoriaupe19 = glm(monitoria ~ cotas_dummy + auxilio + renda_cod + raca + esc_pais_max, family = binomial(link = "logit"), data = UPE_2019)
 summary(monitoriaupe19)
@@ -1209,7 +1209,7 @@ PseudoR2(mUFPE2019, which = "Nagelkerke")
 ggcoef(mUFPE2019, exponentiate = TRUE, exclude_intercept = TRUE,
   errorbar_height = .2, color = "orange", size = 4, shape = 20)
 ```
-#####2018
+# 2018
 ```{r}
 #upe 2018
 mupe18 = glm(monitoria ~ cotas_dummy + auxilio + renda_cod + raca + esc_pais_max, family = binomial(link = "logit"), data = UPE_2018)
@@ -1226,7 +1226,7 @@ PseudoR2(mupe18, which = "Nagelkerke")
 ggcoef(mupe18, exponentiate = TRUE, exclude_intercept = TRUE,
   errorbar_height = .2, color = "orange", size = 4, shape = 20)
 ```
-####2017
+# 2017
 ```{r}
 mufpe17 = glm(monitoria ~ cotas_dummy + auxilio + renda_cod + raca + esc_pais_max, family = binomial(link = "logit"), data = UFPE_2017)
 summary(mufpe17)
@@ -1243,7 +1243,7 @@ PseudoR2(mupe17, which = "Nagelkerke")
 ggcoef(mupe17, exponentiate = TRUE, exclude_intercept = TRUE,
   errorbar_height = .2, color = "orange", size = 4, shape = 20)
 ```
-####2016
+# 2016
 ```{r}
 #ufpe 2016
 mufpe16 = glm(monitoria ~ cotas_dummy + auxilio + renda_cod + raca + esc_pais_max, family = binomial(link = "logit"), data = UFPE_2016)
@@ -1262,8 +1262,7 @@ ggcoef(mupe16, exponentiate = TRUE, exclude_intercept = TRUE,
   errorbar_height = .2, color = "orange", size = 4, shape = 20)
 ```
 
-
-####2015
+# 2015
 ```{r}
 #modelo inadequado UPE 2015
 mupe15 = glm(monitoria ~ cotas_dummy + auxilio + renda_cod + raca + esc_pais_max, family = binomial(link = "logit"), data = UPE_2015)
@@ -1282,8 +1281,8 @@ ggcoef(mufpe15, exponentiate = TRUE, exclude_intercept = TRUE,
   errorbar_height = .2, color = "orange", size = 4, shape = 20)
 ```
 
-####Modelos logísticos adequados 
-#####2015
+# Modelos logísticos adequados 
+# 2015
 ```{r}
 #ufpe 2015
 ufpe15 = glm(cotas_dummy ~ raca + renda_cod + esc_pai + esc_mae + escola_privada + escola_publica, family = binomial (link = "logit"), data = UFPE_2015)
@@ -1306,7 +1305,7 @@ ggcoef(upe15, exponentiate = TRUE,
   errorbar_height = .2, color = "pink", exclude_intercept = TRUE, size = 4, shape = 15)
 ```
 
-####2016
+# 2016
 ```{r}
 #upe 2016
 upe16 = glm(cotas_dummy ~ renda_cod + raca + esc_pai + esc_mae + escola_privada, family = binomial (link = "logit"), data = UPE_2016)
@@ -1328,7 +1327,7 @@ ggcoef(ufpe16, exponentiate = TRUE,
   errorbar_height = .2, color = "pink", exclude_intercept = TRUE, size = 4, shape = 15)
 ```
 
-#####2017
+# 2017
 ```{r}
 #ufpe 2017
 ufpe17 = glm(cotas_dummy ~ renda_cod + raca + esc_pai + esc_mae + escola_privada + escola_publica, family = binomial (link = "logit"), data = UFPE_2017)
@@ -1349,7 +1348,7 @@ PseudoR2(upe17, which = "Nagelkerke")
 ggcoef(upe17, exponentiate = TRUE,
   errorbar_height = .2, color = "pink", exclude_intercept = TRUE, size = 4, shape = 15)
 ```
-##### 2018
+# 2018
 ```{r}
 #ufpe 2018
 ufpe18 = glm(cotas_dummy ~ renda_cod + raca + esc_pai + esc_mae + escola_privada + escola_publica, family = binomial (link = "logit"), data = UFPE_2018)
@@ -1371,7 +1370,7 @@ ggcoef(upe18, exponentiate = TRUE,
   errorbar_height = .2, color = "lightgreen", exclude_intercept = TRUE, size = 4, shape = 15)
 ```
 
-####2019
+# 2019
 ```{r}
 #ufpe 2019
 ufpe19 = glm(cotas_dummy ~ renda_cod + raca + esc_pai + esc_mae + escola_privada + escola_publica, family = binomial (link = "logit"), data = UFPE_2019)
@@ -1394,7 +1393,7 @@ ggcoef(upe19, exponentiate = TRUE,
   errorbar_height = .2, color = "blue", exclude_intercept = TRUE, size = 4, shape = 15)
 ```
 
-##### modelo de auxílio 
+# modelo de auxílio 
 ####2019
 ```{r}
 # AUXILIO UFPE 2019
@@ -1405,14 +1404,14 @@ ggcoef(auxufpe19, exponentiate = TRUE,
   errorbar_height = .2, color = "purple", exclude_intercept = TRUE, size = 4, shape = 18)
 ```
 ```{r}
-## AUXILIO UPE 2019
+#AUXILIO UPE 2019
 auxupe19 = glm(auxilio ~ cotas + renda_cod + esc_pais_max + raca, family = binomial(link = "logit"), data = UPE_2019)
 summary(stdres(auxupe19))
 PseudoR2(auxupe19, which = "Nagelkerke")
 ggcoef(auxupe19, exponentiate = TRUE,
   errorbar_height = .2, color = "purple", exclude_intercept = TRUE, size = 4, shape = 18)
 ```
-####2018
+# 2018
 ```{r}
 auxufpe2018 = glm(auxilio ~ cotas_dummy + raca + renda_cod + esc_pais_max, family = binomial(link = "logit"), data = UFPE_2018)
 summary(stdres(auxufpe2018))
@@ -1420,7 +1419,6 @@ PseudoR2(auxufpe2018, which = "Nagelkerke")
 ggcoef(auxufpe2018, exponentiate = TRUE,
   errorbar_height = .2, color = "purple", exclude_intercept = TRUE, size = 4, shape = 18)
 ```
-
 ```{r}
 auxupe2018 = glm(auxilio ~ cotas_dummy + raca + renda_cod + esc_pais_max, family = binomial(link = "logit"), data = UPE_2018)
 summary(stdres(auxupe2018))
@@ -1429,7 +1427,7 @@ ggcoef(auxupe2018, exponentiate = TRUE,
   errorbar_height = .2, color = "purple", exclude_intercept = TRUE, size = 4, shape = 18)
 ```
 
-####2017
+# 2017
 ```{r}
 auxupe2017 = glm(auxilio ~ cotas_dummy + raca + renda_cod + esc_pais_max, family = binomial(link = "logit"), data = UPE_2017)
 summary(stdres(auxupe2017))
@@ -1461,7 +1459,7 @@ PseudoR2(auxufpe2017, which = "Nagelkerke")
 ggcoef(auxufpe2017, exponentiate = TRUE,
   errorbar_height = .2, color = "purple", exclude_intercept = TRUE, size = 4, shape = 18)
 ```
-####2016
+# 2016
 ```{r}
 auxupe2016 = glm(auxilio ~ cotas_dummy + raca + renda_cod + esc_pais_max, family = binomial(link = "logit"), data = UPE_2016)
 summary(stdres(auxupe2016))
@@ -1469,7 +1467,7 @@ PseudoR2(auxupe2016, which = "Nagelkerke")
 ggcoef(auxupe2016, exponentiate = TRUE,
   errorbar_height = .2, color = "purple", exclude_intercept = TRUE, size = 4, shape = 18)
 ```
-####2015
+# 2015
 ```{r}
 auxufpe2015 = glm(auxilio ~ cotas_dummy + raca + renda_cod + esc_mae, family = binomial(link = "logit"), data = UFPE_2015)
 summary(stdres(auxufpe2015))
@@ -1485,8 +1483,8 @@ PseudoR2(auxupe2015, which = "Nagelkerke")
 ggcoef(auxupe2015, exponentiate = TRUE,
   errorbar_height = .2, color = "purple", exclude_intercept = TRUE, size = 4, shape = 18)
 ```
-###extensao
-####2019
+# extensao
+# 2019
 ```{r}
 #ufpe 2019
 extensao_ufpe19 = glm(extensao ~ cotas_dummy + auxilio + renda_cod + raca + esc_pais_max,  family = binomial(link = "logit"), data = UFPE_2019)
@@ -1506,7 +1504,7 @@ PseudoR2(extensao_upe19, which = "Nagelkerke")
 ggcoef(extensao_upe19, exponentiate = TRUE, exclude_intercept = TRUE,
   errorbar_height = .2, color = "orange", size = 4, shape = 20)
 ```
-#### 2018
+# 2018
 ```{r}
 #ufpe 2018
 extensao_ufpe18 = glm(extensao ~ cotas_dummy + auxilio + renda_cod + raca + esc_pais_max,  family = binomial(link = "logit"), data = UFPE_2018)
@@ -1528,7 +1526,7 @@ ggcoef(extensao_upe18, exponentiate = TRUE, exclude_intercept = TRUE,
   errorbar_height = .2, color = "orange", size = 4, shape = 20)
 nrow(model.matrix(extensao_upe18))
 ```
-#### 2017
+# 2017
 ```{r}
 #ufpe 2017
 extensao_ufpe17 = glm(extensao ~ cotas_dummy + auxilio + renda_cod + raca + esc_pais_max,  family = binomial(link = "logit"), data = UFPE_2017)
@@ -1548,7 +1546,7 @@ PseudoR2(extensao_upe17, which = "Nagelkerke")
 ggcoef(extensao_upe17, exponentiate = TRUE, exclude_intercept = TRUE,
   errorbar_height = .2, color = "orange", size = 4, shape = 20)
 ```
-#### 2016
+# 2016
 ```{r}
 #upe 2016
 extensao_upe16 = glm(extensao ~ cotas_dummy + auxilio + renda_cod + raca + esc_pais_max,  family = binomial(link = "logit"), data = UPE_2016)
@@ -1569,7 +1567,7 @@ PseudoR2(extensao_ufpe16, which = "Nagelkerke")
 ggcoef(extensao_ufpe16, exponentiate = TRUE, exclude_intercept = TRUE,
   errorbar_height = .2, color = "orange", size = 4, shape = 20)
 ```
-#### 2015
+# 2015
 ```{r}
 #ufpe 2015
 extensao_ufpe15 = glm(extensao ~ cotas_dummy + auxilio + renda_cod + raca + esc_pais_max,  family = binomial(link = "logit"), data = UFPE_2015)
@@ -1588,8 +1586,8 @@ PseudoR2(extensao_upe15, which = "Nagelkerke")
 ggcoef(extensao_upe15, exponentiate = TRUE, exclude_intercept = TRUE,
   errorbar_height = .2, color = "orange", size = 4, shape = 20)
 ```
-###pibic
-####2019
+# pibic
+# 2019
 ```{r}
 #ufpe 2019
 pibic_ufpe19 = glm(pibic ~ cotas_dummy + auxilio + renda_cod + raca + esc_pais_max,  family = binomial(link = "logit"), data = UFPE_2019)
@@ -1608,7 +1606,7 @@ PseudoR2(pibic_upe19, which = "Nagelkerke")
 ggcoef(pibic_upe19, exponentiate = TRUE, exclude_intercept = TRUE,
   errorbar_height = .2, color = "orange", size = 4, shape = 20)
 ```
-####2018
+# 2018
 ```{r}
 #upe 2018
 pibic_upe18 = glm(pibic ~ cotas_dummy + auxilio + renda_cod + raca + esc_pais_max,  family = binomial(link = "logit"), data = UPE_2018)
@@ -1629,7 +1627,7 @@ PseudoR2(pibic_ufpe18, which = "Nagelkerke")
 ggcoef(pibic_ufpe18, exponentiate = TRUE, exclude_intercept = TRUE,
   errorbar_height = .2, color = "orange", size = 4, shape = 20)
 ```
-####2017
+# 2017
 ```{r}
 #ufpe 2017
 pibic_ufpe17 = glm(pibic ~ cotas_dummy + auxilio + renda_cod + raca + esc_pais_max,  family = binomial(link = "logit"), data = UFPE_2017)
@@ -1650,7 +1648,7 @@ PseudoR2(pibic_upe17, which = "Nagelkerke")
 ggcoef(pibic_upe17, exponentiate = TRUE, exclude_intercept = TRUE,
   errorbar_height = .2, color = "orange", size = 4, shape = 20)
 ```
-#### 2016
+# 2016
 ```{r}
 #ufpe 2016
 pibic_ufpe16 = glm(pibic ~ cotas_dummy + auxilio + renda_cod + raca + esc_pais_max,  family = binomial(link = "logit"), data = UFPE_2016)
@@ -1669,7 +1667,7 @@ PseudoR2(pibic_upe16, which = "Nagelkerke")
 ggcoef(pibic_upe16, exponentiate = TRUE, exclude_intercept = TRUE,
   errorbar_height = .2, color = "orange", size = 4, shape = 20)
 ```
-####2015
+# 2015
 ```{r}
 #ufpe 2015
 pibic_ufpe15 = glm(pibic ~ cotas_dummy + auxilio + renda_cod + raca + esc_pais_max,  family = binomial(link = "logit"), data = UFPE_2015)
